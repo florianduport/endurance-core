@@ -1,6 +1,6 @@
 {
   "name": "endurance-core",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "endurance framework core lib",
   "main": ".lib/app.js",
   "scripts": {
@@ -18,7 +18,8 @@
     "morgan": "^1.10.0",
     "http-errors": "^1.8.0",
     "compression": "^1.7.4",
-    "rotating-file-stream": "^2.1.5"
+    "rotating-file-stream": "^2.1.5",
+    "node-cron": "^2.0.3"
   },
   "author": "florianduport",
   "license": "ISC",
