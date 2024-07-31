@@ -1,6 +1,6 @@
 {
   "name": "endurance-core",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "endurance framework core lib",
   "main": ".lib/app.js",
   "scripts": {
@@ -9,6 +9,16 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/florianduport/endurance-core.git"
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "cookie-parser": "^1.4.5",
+    "morgan": "^1.10.0",
+    "http-errors": "^1.8.0",
+    "compression": "^1.7.4",
+    "rotating-file-stream": "^2.1.5"
   },
   "author": "florianduport",
   "license": "ISC",
