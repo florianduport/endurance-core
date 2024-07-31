@@ -1,0 +1,19 @@
+{
+  "name": "endurance-core",
+  "version": "0.1.2",
+  "description": "endurance framework core lib",
+  "main": ".lib/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/florianduport/endurance-core.git"
+  },
+  "author": "florianduport",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/florianduport/endurance-core/issues"
+  },
+  "homepage": "https://github.com/florianduport/endurance-core#readme"
+}
