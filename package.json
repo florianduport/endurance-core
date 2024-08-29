@@ -1,8 +1,9 @@
 {
   "name": "endurance-core",
-  "version": "0.1.27",
+  "version": "0.2.0",
   "description": "endurance framework core lib",
-  "main": ".lib/app.js",
+  "main": "./lib/app.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
