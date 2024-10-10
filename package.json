@@ -1,6 +1,6 @@
 {
   "name": "endurance-core",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "endurance framework core lib",
   "main": "./lib/app.js",
   "type": "module",
@@ -28,7 +28,9 @@
     "passport-local": "^1.0.0",
     "rotating-file-stream": "^2.1.5",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.15.0",
+    "winston-loki": "^6.1.2"
   },
   "author": "florianduport",
   "license": "ISC",
