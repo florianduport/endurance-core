@@ -1,6 +1,6 @@
 {
   "name": "endurance-core",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "endurance framework core lib",
   "main": "./lib/app.js",
   "type": "module",
@@ -15,6 +15,7 @@
     "compression": "^1.7.4",
     "connect-mongodb-session": "^5.0.0",
     "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
