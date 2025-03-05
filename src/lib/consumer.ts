@@ -3,7 +3,7 @@ import * as kafkaConsumer from './consumers/kafka.consumer.js';
 
 const createConsumerModule = () => {
   return {
-    createConsumer: function (type, options, callback) {
+    createConsumer: function (type: any, options: any, callback: any) {
       switch (type) {
         case 'amqp':
           return amqpConsumer.createConsumer(options, callback);
