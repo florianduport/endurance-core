@@ -37,5 +37,8 @@
   "bugs": {
     "url": "https://github.com/florianduport/endurance-core/issues"
   },
-  "homepage": "https://github.com/florianduport/endurance-core#readme"
+  "homepage": "https://github.com/florianduport/endurance-core#readme",
+  "devDependencies": {
+    "ts-migrate": "^0.1.35"
+  }
 }
