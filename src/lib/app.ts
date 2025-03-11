@@ -16,8 +16,8 @@ import fs from 'fs';
 // @ts-expect-error TS(7016): Could not find a declaration file for module 'comp... Remove this comment to see the full error message
 import compression from 'compression';
 import rfs from 'rotating-file-stream';
-import { emitter, eventTypes } from './emitter.js';
-import { generateSwaggerSpec, setupSwagger } from './swagger.js';
+import { emitter, eventTypes } from './emitter';
+import { generateSwaggerSpec, setupSwagger } from './swagger';
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,30 +190,50 @@ const loadServer = async (loadModels: any) => {
   };
 
   const readModulesFolder = async (folderPath: any, overridePath: any) => {
-    fs.readdirSync(folderPath).forEach(async (file) => {
-      const filePath = path.join(folderPath, file);
-      const overrideFilePath = path.join(overridePath, file);
+    try {
+      fs.readdirSync(folderPath).forEach(async (file) => {
+        const filePath = path.join(folderPath, file);
+        const overrideFilePath = path.join(overridePath, file);
 
-      if (isDirectory(filePath)) {
-        await readModulesFolder(filePath, overrideFilePath);
-      } else if (fs.existsSync(overrideFilePath)) {
-        await processFile(overridePath, file);
-      } else {
-        await processFile(folderPath, file);
-      }
-    });
+        try {
+          if (isDirectory(filePath)) {
+            await readModulesFolder(filePath, overrideFilePath);
+          } else if (fs.existsSync(overrideFilePath)) {
+            await processFile(overridePath, file);
+          } else {
+            await processFile(folderPath, file);
+          }
+        } catch (err) {
+          console.error(`Error processing file ${file}:`, err);
+        }
+      });
+    } catch (err) {
+      console.error('Error reading directory:', err);
+    }
   };
 
   const readModulesFolderTS = async (folderPath: any) => {
-    const distPath = path.join(folderPath, 'dist');
-    if (isDirectory(distPath)) {
-      fs.readdirSync(distPath).forEach(async (file) => {
-        await processFileTS(distPath, file);
-      });
-    } else {
-      fs.readdirSync(folderPath).forEach(async (file) => {
-        await processFileTS(folderPath, file);
-      });
+    try {
+      const distPath = path.join(folderPath, 'dist');
+      if (isDirectory(distPath)) {
+        fs.readdirSync(distPath).forEach(async (file) => {
+          try {
+            await processFileTS(distPath, file);
+          } catch (err) {
+            console.error(`Error processing file ${file} in distPath:`, err);
+          }
+        });
+      } else {
+        fs.readdirSync(folderPath).forEach(async (file) => {
+          try {
+            await processFileTS(folderPath, file);
+          } catch (err) {
+            console.error(`Error processing file ${file} in folderPath:`, err);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error reading directory:', err);
     }
   };
 
@@ -222,17 +242,26 @@ const loadServer = async (loadModels: any) => {
     const nodeModulesPath = path.join(__dirname, '../../../node_modules');
     const localModulesPath = path.join(__dirname, '../../../modules');
 
-    fs.readdirSync(nodeModulesPath).forEach(async (moduleName) => {
-      if (moduleName.startsWith('edrm-')) {
-        console.log('Loading EDRM module: ', moduleName);
-        const modulePath = path.join(nodeModulesPath, moduleName);
-        const localModulePath = path.join(localModulesPath, moduleName);
+    try {
+      const moduleNames = fs.readdirSync(nodeModulesPath);
+      for (const moduleName of moduleNames) {
+        if (moduleName.startsWith('edrm-')) {
+          console.log('Loading EDRM module: ', moduleName);
+          const modulePath = path.join(nodeModulesPath, moduleName);
+          const localModulePath = path.join(localModulesPath, moduleName);
 
-        if (isDirectory(modulePath)) {
-          await readModulesFolder(modulePath, localModulePath);
+          if (isDirectory(modulePath)) {
+            try {
+              await readModulesFolder(modulePath, localModulePath);
+            } catch (err) {
+              console.error(`Error reading module folder ${modulePath}:`, err);
+            }
+          }
         }
       }
-    });
+    } catch (err) {
+      console.error('Error reading node modules directory:', err);
+    }
   };
 
   // Load the marketplace modules
@@ -287,6 +316,15 @@ const loadServer = async (loadModels: any) => {
     console.log(swaggerApiFiles);
     const swaggerSpec = generateSwaggerSpec(swaggerApiFiles);
     await setupSwagger(app, swaggerSpec); // Ensure setupSwagger is awaited
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    app.get('/cause-error', (req, res, next) => {
+      console.log('cause-error');
+      const error = new Error('Intentional error');
+      (error as any).status = 500;
+      res.status(500).json({ message: error.message });
+    });
   }
 
   // catch 404 and forward to error handler
