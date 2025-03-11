@@ -16,8 +16,8 @@ import fs from 'fs';
 // @ts-expect-error TS(7016): Could not find a declaration file for module 'comp... Remove this comment to see the full error message
 import compression from 'compression';
 import rfs from 'rotating-file-stream';
-import { emitter, eventTypes } from './emitter';
-import { generateSwaggerSpec, setupSwagger } from './swagger';
+import { emitter, eventTypes } from './emitter.js';
+import { generateSwaggerSpec, setupSwagger } from './swagger.js';
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

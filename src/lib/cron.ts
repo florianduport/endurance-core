@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { emitter } from './emitter';
+import { emitter } from './emitter.js';
 
 // Définition du type ScheduledTask
 type ScheduledTask = {

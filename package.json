@@ -1,13 +1,13 @@
 {
   "name": "endurance-core",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "endurance framework core lib",
   "main": "./dist/lib/app.js",
   "type": "module",
   "scripts": {
     "dev": "ts-node ./src/lib/app.ts",
     "lint": "eslint '**/*.{ts,tsx}'",
-    "build": "eslint '**/*.{ts,tsx}' --ignore-pattern '**/__tests__/**' && tsc",
+    "build": "eslint '**/*.{ts,tsx}' --ignore-pattern '**/__tests__/**' && tsc && tsc-alias",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
   },
   "repository": {
@@ -63,6 +63,7 @@
     "ts-jest": "^29.2.6",
     "ts-migrate": "^0.1.35",
     "ts-node": "^10.0.0",
+    "tsc-alias": "^1.8.11",
     "typescript": "^4.0.0"
   }
 }
