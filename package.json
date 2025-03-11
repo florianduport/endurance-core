@@ -1,6 +1,6 @@
 {
   "name": "endurance-core",
-  "version": "0.2.21",
+  "version": "0.3.0",
   "description": "endurance framework core lib",
   "main": "./dist/lib/app.js",
   "type": "module",
