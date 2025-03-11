@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
-import session from "express-session";
-import connectMongoDBSession from "connect-mongodb-session";
+import mongoose from 'mongoose';
+import session from 'express-session';
+import connectMongoDBSession from 'connect-mongodb-session';
 
 const MongoDBStore = connectMongoDBSession(session);
 
@@ -15,7 +15,7 @@ const checkRequiredEnvVars = () => {
 };
 
 const getDbConnectionString = () => {
-  const envVars = {};
+  const envVars: Record<string, string> = {};
   requiredEnvVars.forEach((envVar) => {
     const value = process.env[envVar];
     if (!value) {
@@ -32,9 +32,7 @@ const connect = () => {
   const connectionString = getDbConnectionString();
 
   return mongoose.connect(connectionString, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    connectTimeoutMS: 30000,
+    connectTimeoutMS: 30000
   });
 };
 
@@ -43,10 +41,10 @@ const createStore = () => {
 
   const store = new MongoDBStore({
     uri,
-    collection: "sessions",
+    collection: 'sessions'
   });
 
-  store.on('error', (error) => {
+  store.on('error', (error: any) => {
     console.error('Session store error:', error);
   });
 

@@ -1,6 +1,7 @@
+// @ts-expect-error TS(2307): Cannot find module 'amqplib' or its corresponding ... Remove this comment to see the full error message
 import amqp from 'amqplib';
 
-async function createConsumer(options, callback) {
+const createConsumer = async function (options: any, callback: any) {
     const { url, queue } = options;
     try {
         const connection = await amqp.connect(url);
@@ -9,7 +10,7 @@ async function createConsumer(options, callback) {
 
         console.log(`RabbitMQ consumer connected to queue: ${queue}`);
 
-        channel.consume(queue, (msg) => {
+        channel.consume(queue, (msg: any) => {
             if (msg !== null) {
                 const messageContent = msg.content.toString();
                 callback(messageContent);
@@ -19,6 +20,6 @@ async function createConsumer(options, callback) {
     } catch (error) {
         console.error('Error connecting to RabbitMQ', error);
     }
-}
+};
 
 export { createConsumer };

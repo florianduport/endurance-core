@@ -1,7 +1,7 @@
 const notificationTypes = new Set();
 const registeredNotifications = new Map();
 
-const sendNotification = (type, options) => {
+const sendNotification = (type: any, options: any) => {
   const normalizedType = type.toLowerCase();
   if (!notificationTypes.has(normalizedType)) {
     throw new Error(`Notification type "${type}" is not registered.`);
@@ -14,7 +14,7 @@ const sendNotification = (type, options) => {
   }
 };
 
-const registerNotification = (type, handler) => {
+const registerNotification = (type: any, handler: any) => {
   const normalizedType = type.toLowerCase();
   if (notificationTypes.has(normalizedType)) {
     throw new Error(`Notification type "${type}" is already registered.`);
@@ -26,5 +26,5 @@ const registerNotification = (type, handler) => {
 
 export {
   sendNotification,
-  registerNotification,
+  registerNotification
 };

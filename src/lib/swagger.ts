@@ -3,6 +3,7 @@ import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -12,15 +13,15 @@ const defaultOptions = {
     info: {
       title: 'Endurance API',
       version: '1.0.0',
-      description: 'Description of the Endurance API',
+      description: 'Description of the Endurance API'
     },
     servers: [
       {
         url: 'http://localhost:3000',
-        description: 'Local server',
-      },
+        description: 'Local server'
+      }
     ],
-    components: {  // Ajout de la structure components
+    components: {
       schemas: {}
     }
   },
@@ -30,8 +31,8 @@ const defaultOptions = {
 const loadOptions = async () => {
   const swaggerConfigPath = path.resolve(__dirname, '../../../swagger.json');
   if (fs.existsSync(swaggerConfigPath)) {
-    const swaggerConfig = await import("file:///" + swaggerConfigPath, {
-      assert: { type: "json" }
+    const swaggerConfig = await import('file:///' + swaggerConfigPath, {
+      assert: { type: 'json' }
     });
     return swaggerConfig.default;
   }
@@ -39,10 +40,10 @@ const loadOptions = async () => {
 };
 
 const options = await loadOptions();
-const generateSwaggerSpec = (apiFiles) => {
+const generateSwaggerSpec = (apiFiles: any) => {
   const updatedOptions = {
     swaggerDefinition: {
-      ...options.swaggerDefinition,  // Utiliser options.swaggerDefinition et spread operator
+      ...options.swaggerDefinition,
       components: {
         schemas: {}
       }
@@ -53,11 +54,11 @@ const generateSwaggerSpec = (apiFiles) => {
   return swaggerJsdoc(updatedOptions);
 };
 
-const setupSwagger = (app, swaggerSpec) => {
+const setupSwagger = (app: any, swaggerSpec: any) => {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };
 
 export {
   generateSwaggerSpec,
-  setupSwagger,
+  setupSwagger
 };
