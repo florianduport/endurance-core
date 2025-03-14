@@ -1,9 +1,10 @@
 {
   "name": "endurance-core",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "endurance framework core lib",
   "main": "./dist/index.js",
   "type": "module",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "ts-node ./src/lib/app.ts",
     "lint": "eslint '**/*.{ts,tsx}'",
@@ -14,7 +15,6 @@
     "type": "git",
     "url": "git+https://github.com/florianduport/endurance-core.git"
   },
-  "types": "./dist/types/endurance-core.d.ts",
   "dependencies": {
     "amqplib": "^0.10.5",
     "compression": "^1.7.4",
