@@ -1,7 +1,14 @@
-// @ts-expect-error TS(2307): Cannot find module 'kafkajs' or its corresponding ... Remove this comment to see the full error message
-import { Kafka } from 'kafkajs';
+import { Kafka, EachMessagePayload } from 'kafkajs';
 
-const createConsumer = async function (options: any, callback: any) {
+interface ConsumerOptions {
+    brokers: string[];
+    groupId: string;
+    topic: string;
+}
+
+type MessageCallback = (messageContent: string) => void;
+
+const createConsumer = async (options: ConsumerOptions, callback: MessageCallback): Promise<void> => {
     const { brokers, groupId, topic } = options;
     const kafka = new Kafka({ brokers });
     const consumer = kafka.consumer({ groupId });
@@ -11,12 +18,8 @@ const createConsumer = async function (options: any, callback: any) {
         await consumer.subscribe({ topic, fromBeginning: true });
         console.log(`Kafka consumer connected to topic: ${topic}`);
         await consumer.run({
-            eachMessage: async ({
-                topic,
-                partition,
-                message
-            }: any) => {
-                const messageContent = message.value.toString();
+            eachMessage: async ({ message }: EachMessagePayload) => {
+                const messageContent = message.value?.toString() || '';
                 callback(messageContent);
             }
         });

@@ -25,7 +25,8 @@
             {
                 "ts-expect-error": "allow-with-description"
             }
-        ]
+        ],
+        "space-before-function-paren": "off"
     },
     "ignorePatterns": [
         "dist/"

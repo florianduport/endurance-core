@@ -1,30 +1,31 @@
-const notificationTypes = new Set();
-const registeredNotifications = new Map();
+type NotificationHandler = (options: unknown) => void;
 
-const sendNotification = (type: any, options: any) => {
-  const normalizedType = type.toLowerCase();
-  if (!notificationTypes.has(normalizedType)) {
-    throw new Error(`Notification type "${type}" is not registered.`);
-  }
-  const notificationHandler = registeredNotifications.get(normalizedType);
-  if (notificationHandler) {
-    notificationHandler(options);
-  } else {
-    throw new Error(`No handler found for notification type "${type}".`);
-  }
-};
+class EnduranceNotificationManager {
+  private notificationTypes: Set<string> = new Set();
+  private registeredNotifications: Map<string, NotificationHandler> = new Map();
 
-const registerNotification = (type: any, handler: any) => {
-  const normalizedType = type.toLowerCase();
-  if (notificationTypes.has(normalizedType)) {
-    throw new Error(`Notification type "${type}" is already registered.`);
-  } else {
-    notificationTypes.add(normalizedType);
-    registeredNotifications.set(normalizedType, handler);
+  public sendNotification(type: string, options: unknown): void {
+    const normalizedType = type.toLowerCase();
+    if (!this.notificationTypes.has(normalizedType)) {
+      throw new Error(`Notification type "${type}" is not registered.`);
+    }
+    const notificationHandler = this.registeredNotifications.get(normalizedType);
+    if (notificationHandler) {
+      notificationHandler(options);
+    } else {
+      throw new Error(`No handler found for notification type "${type}".`);
+    }
   }
-};
 
-export {
-  sendNotification,
-  registerNotification
-};
+  public registerNotification(type: string, handler: NotificationHandler): void {
+    const normalizedType = type.toLowerCase();
+    if (this.notificationTypes.has(normalizedType)) {
+      throw new Error(`Notification type "${type}" is already registered.`);
+    } else {
+      this.notificationTypes.add(normalizedType);
+      this.registeredNotifications.set(normalizedType, handler);
+    }
+  }
+}
+
+export const enduranceNotificationManager = new EnduranceNotificationManager();

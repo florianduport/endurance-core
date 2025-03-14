@@ -1,50 +1,52 @@
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
 
-const createEmitter = () => {
-  const emitter = new EventEmitter();
+interface EventTypes {
+  [key: string]: string;
+}
 
-  const eventTypes = {};
+type AnyListener = (eventName: string | symbol, ...args: unknown[]) => void;
+
+class EnduranceEventEmitter extends EventEmitter {
+  private anyListeners: AnyListener[] = [];
+
+  public onAny(callback: AnyListener): void {
+    this.anyListeners.push(callback);
+  }
+
+  public offAny(callback: AnyListener): void {
+    const index = this.anyListeners.indexOf(callback);
+    if (index !== -1) {
+      this.anyListeners.splice(index, 1);
+    }
+  }
+
+  public emit(eventName: string | symbol, ...args: unknown[]): boolean {
+    this.anyListeners.forEach(callback => {
+      callback(eventName, ...args);
+    });
+    return super.emit(eventName, ...args);
+  }
+}
+
+const createEmitter = (): { emitter: EnduranceEventEmitter; eventTypes: EventTypes } => {
+  const emitter = new EnduranceEventEmitter();
+
+  const eventTypes: EventTypes = {};
 
   const eventTypesProxy = new Proxy(eventTypes, {
-    get: function (target, name) {
-      // @ts-expect-error TS(2339): Property 'toUpperCase' does not exist on type 'str... Remove this comment to see the full error message
+    get: (target, name: string) => {
       const upperName = name.toUpperCase();
       if (!(upperName in target)) {
-        // @ts-expect-error TS(7053): Element implicitly has an 'any' type because expre... Remove this comment to see the full error message
         target[upperName] = upperName;
       }
-      // @ts-expect-error TS(7053): Element implicitly has an 'any' type because expre... Remove this comment to see the full error message
       return target[upperName];
     }
   });
-
-  const anyListeners: any = [];
-
-  // @ts-expect-error TS(2339): Property 'onAny' does not exist on type 'EventEmit... Remove this comment to see the full error message
-  emitter.onAny = (callback: any) => {
-    anyListeners.push(callback);
-  };
-
-  // @ts-expect-error TS(2339): Property 'offAny' does not exist on type 'EventEmi... Remove this comment to see the full error message
-  emitter.offAny = (callback: any) => {
-    const index = anyListeners.indexOf(callback);
-    if (index !== -1) {
-      anyListeners.splice(index, 1);
-    }
-  };
-
-  const originalEmit = emitter.emit;
-  // @ts-expect-error TS(2322): Type '<K>(eventName: string | symbol, ...args: Any... Remove this comment to see the full error message
-  emitter.emit = function (eventName, ...args) {
-    // @ts-expect-error TS(7006): Parameter 'callback' implicitly has an 'any' type.
-    anyListeners.forEach(callback => callback(eventName, ...args));
-    originalEmit.apply(emitter, [eventName, ...args]);
-  };
 
   return { emitter, eventTypes: eventTypesProxy };
 };
 
 const emitterInstance = createEmitter();
 
-export const emitter = emitterInstance.emitter;
-export const eventTypes = emitterInstance.eventTypes;
+export const enduranceEmitter = emitterInstance.emitter;
+export const enduranceEventTypes = emitterInstance.eventTypes;

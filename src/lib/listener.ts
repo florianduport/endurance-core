@@ -1,40 +1,30 @@
-import { emitter } from './emitter.js';
+import { enduranceEmitter } from './emitter.js';
 
-const createListener = () => {
-  const createListener = (eventName: any, callback: any) => {
+type EventCallback = (...args: unknown[]) => void;
+
+class EnduranceEventListener {
+  public createListener(eventName: string, callback: EventCallback): void {
     const upperEventName = eventName.toUpperCase();
-    emitter.on(upperEventName, callback);
-  };
+    enduranceEmitter.on(upperEventName, callback);
+  }
 
-  const removeListener = (eventName: any, callback: any) => {
+  public removeListener(eventName: string, callback: EventCallback): void {
     const upperEventName = eventName.toUpperCase();
-    emitter.off(upperEventName, callback);
-  };
+    enduranceEmitter.off(upperEventName, callback);
+  }
 
-  const onceListener = (eventName: any, callback: any) => {
+  public onceListener(eventName: string, callback: EventCallback): void {
     const upperEventName = eventName.toUpperCase();
-    emitter.once(upperEventName, callback);
-  };
+    enduranceEmitter.once(upperEventName, callback);
+  }
 
-  const createAnyListener = (callback: any) => {
-    // @ts-expect-error TS(2339): Property 'onAny' does not exist on type 'EventEmit... Remove this comment to see the full error message
-    emitter.onAny(callback);
-  };
+  public createAnyListener(callback: EventCallback): void {
+    enduranceEmitter.onAny(callback);
+  }
 
-  const removeAnyListener = (callback: any) => {
-    // @ts-expect-error TS(2339): Property 'offAny' does not exist on type 'EventEmi... Remove this comment to see the full error message
-    emitter.offAny(callback);
-  };
+  public removeAnyListener(callback: EventCallback): void {
+    enduranceEmitter.offAny(callback);
+  }
+}
 
-  return {
-    createListener,
-    removeListener,
-    onceListener,
-    createAnyListener,
-    removeAnyListener
-  };
-};
-
-const listenerInstance = createListener();
-
-export default listenerInstance;
+export const enduranceListener = new EnduranceEventListener();

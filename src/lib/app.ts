@@ -1,383 +1,360 @@
 // Import dependencies
 import 'dotenv/config';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import path from 'path';
-// @ts-expect-error TS(7016): Could not find a declaration file for module 'cors... Remove this comment to see the full error message
 import cors from 'cors';
-// @ts-expect-error TS(7016): Could not find a declaration file for module 'cook... Remove this comment to see the full error message
 import cookieParser from 'cookie-parser';
-// @ts-expect-error TS(7016): Could not find a declaration file for module 'morg... Remove this comment to see the full error message
 import logger from 'morgan';
 import createError from 'http-errors';
 import winston from 'winston';
 import LokiTransport from 'winston-loki';
 import fs from 'fs';
-// @ts-expect-error TS(7016): Could not find a declaration file for module 'comp... Remove this comment to see the full error message
 import compression from 'compression';
 import rfs from 'rotating-file-stream';
-import { emitter, eventTypes } from './emitter.js';
-import { generateSwaggerSpec, setupSwagger } from './swagger.js';
+import { enduranceEmitter, enduranceEventTypes } from './emitter.js';
+import { enduranceSwagger } from './swagger.js';
 import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const app = express();
-const port = process.env.SERVER_PORT || 3000; // Default port is 3000 if PORT env variable is not set
-app.set('port', port);
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(compression());
-const corsOrigin = process.env.CORS_ORIGIN;
-if (corsOrigin) {
-  const corsOptions = {
-    origin: (origin: any, callback: any) => {
-      if (!origin || corsOrigin === '*' || corsOrigin.split(',').includes(origin)) {
-        callback(null, true); // Authorized
-      } else {
-        callback(new Error('CORS unauthorized')); // Rejected
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  };
-  app.use(cors(corsOptions));
-  app.options('*', cors(corsOptions));
-}
+class EnduranceApp {
+  public app: express.Application;
+  private port: number | string;
+  private loggerWinston: winston.Logger = winston.createLogger();
+  private swaggerApiFiles: string[] = [];
+  private __dirname: string;
 
-const logDirectory = path.join(__dirname, '../../../logs');
-if (!fs.existsSync(logDirectory)) {
-  try {
-    fs.mkdirSync(logDirectory);
-  } catch (err) {
-    console.error('Error creating log directory:', err);
+  constructor() {
+    const __filename = fileURLToPath(import.meta.url);
+    this.__dirname = path.dirname(__filename);
+
+    this.app = express();
+    this.port = process.env.SERVER_PORT || 3000; // Default port is 3000 if PORT env variable is not set
+    this.app.set('port', this.port);
+
+    this.setupMiddlewares();
+    this.setupCors();
+    this.setupLogging();
+    this.setupRoutes().then(() => {
+      this.setupErrorHandling();
+      this.setupDatabase();
+    });
   }
-}
-const accessLogStream = rfs.createStream('access.log', {
-  interval: '1d', // rotate daily
-  path: logDirectory
-});
 
-const transports = [
-  new winston.transports.Console()
-];
+  private setupMiddlewares() {
+    this.app.use(logger('dev'));
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: false }));
+    this.app.use(cookieParser());
+    this.app.use(compression());
+  }
 
-if (process.env.LOGGER_DISTANT_ACTIVATED === 'true') {
-  transports.push(
-    // @ts-expect-error TS(2345): Argument of type 'LokiTransport' is not assignable... Remove this comment to see the full error message
-    new LokiTransport({
-      // @ts-expect-error TS(2322): Type 'string | undefined' is not assignable to typ... Remove this comment to see the full error message
-      host: process.env.LOGGER_DISTANT_URL, // Full URL with http and port
-      labels: { job: process.env.LOGGER_DISTANT_APP_NAME || 'nodejs_app' },
-      json: true,
-      onConnectionError: (err) => {
-        console.error('Connection error with Loki:', err);
-      }
-    })
-  );
-}
-
-const loggerWinston = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  transports
-});
-
-app.use(logger('combined', {
-  stream: {
-    write: (message: any) => {
-      accessLogStream.write(message);
-      loggerWinston.info(message.trim());
+  private setupCors() {
+    const corsOrigin = process.env.CORS_ORIGIN;
+    if (corsOrigin) {
+      const corsOptions: cors.CorsOptions = {
+        origin: (origin, callback) => {
+          if (!origin || corsOrigin === '*' || corsOrigin.split(',').includes(origin)) {
+            callback(null, true); // Authorized
+          } else {
+            callback(new Error('CORS unauthorized')); // Rejected
+          }
+        },
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        credentials: true
+      };
+      this.app.use(cors(corsOptions));
+      this.app.options('*', cors(corsOptions));
     }
   }
-}));
 
-const swaggerApiFiles: any = [];
-
-// Utility function to extract version from filename
-const extractVersion = (filename: any) => {
-  const match = filename.match(/v?(\d+\.\d+\.\d+|\d+)/);
-  return match ? match[1] : null;
-};
-
-// Load routes based on version
-const loadRoutes = async (app: any, basePath: any, filePath: any, version: any) => {
-  try {
-    const { default: router } = await import('file:///' + filePath);
-    const versionedPath = version ? `/v${version}${basePath}` : basePath;
-    app.use(versionedPath, router);
-    console.log('loaded route');
-    swaggerApiFiles.push(filePath); // Add route file to Swagger API files list
-  } catch (err) {
-    console.error(`Error loading routes from ${filePath}:`, err);
-  }
-};
-
-const loadServer = async (loadModels: any) => {
-  const isDirectory = (filePath: any) => fs.existsSync(filePath) && fs.statSync(filePath).isDirectory();
-
-  const endsWith = (filePath: any, suffix: any) => filePath.endsWith(suffix);
-  const routesMap = new Map();
-
-  const processFile = async (folderPath: any, file: any) => {
-    const filePath = path.join(folderPath, file);
-
-    if (isDirectory(filePath)) {
-      // @ts-expect-error TS(2554): Expected 2 arguments, but got 1.
-      await readModulesFolder(filePath);
-    } else if (endsWith(folderPath, 'public')) {
-      app.use(express.static(folderPath));
-    } else if (
-      (endsWith(file, '.listener.js') && endsWith(folderPath, 'listeners')) ||
-      (endsWith(file, '.consumer.js') && endsWith(folderPath, 'consumers')) ||
-      (endsWith(file, '.middleware.js') && endsWith(folderPath, 'middlewares')) ||
-      (endsWith(file, '.cron.js') && endsWith(folderPath, 'crons')) ||
-      (endsWith(file, '.model.js') && endsWith(folderPath, 'models') && loadModels)
-    ) {
+  private setupLogging() {
+    const logDirectory = path.join(this.__dirname, '../../../logs');
+    if (!fs.existsSync(logDirectory)) {
       try {
-        await import('file:///' + filePath);
+        fs.mkdirSync(logDirectory);
       } catch (err) {
-        console.error(`Error loading file ${filePath}:`, err);
+        console.error('Error creating log directory:', err);
       }
-    } else if (endsWith(file, '.router.js') && endsWith(folderPath, 'routes')) {
-      const routerName = path.basename(file, '.router.js');
-      const version = extractVersion(routerName);
-      const basePath = `/${routerName.replace(`.${version}`, '')}`;
-
-      if (!routesMap.has(basePath)) {
-        routesMap.set(basePath, new Map());
-      }
-      routesMap.get(basePath).set(version || 'default', filePath);
     }
-  };
+    const accessLogStream = rfs.createStream('access.log', {
+      interval: '1d', // rotate daily
+      path: logDirectory
+    });
 
-  const processFileTS = async (folderPath: any, file: any) => {
-    const filePath = path.join(folderPath, file);
+    const transports: winston.transport[] = [
+      new winston.transports.Console()
+    ];
 
-    if (isDirectory(filePath)) {
-      await readModulesFolderTS(filePath);
-    } else if (endsWith(folderPath, 'public')) {
-      app.use(express.static(folderPath));
-    } else if (
-      (endsWith(file, '.listener.js') && endsWith(folderPath, 'listeners')) ||
-      (endsWith(file, '.consumer.js') && endsWith(folderPath, 'consumers')) ||
-      (endsWith(file, '.middleware.js') && endsWith(folderPath, 'middlewares')) ||
-      (endsWith(file, '.cron.js') && endsWith(folderPath, 'crons')) ||
-      (endsWith(file, '.model.js') && endsWith(folderPath, 'models') && loadModels)
-    ) {
+    if (process.env.LOGGER_DISTANT_ACTIVATED === 'true') {
+      transports.push(
+        new LokiTransport({
+          host: process.env.LOGGER_DISTANT_URL || '',
+          labels: { job: process.env.LOGGER_DISTANT_APP_NAME || 'nodejs_app' },
+          json: true,
+          onConnectionError: (err) => {
+            console.error('Connection error with Loki:', err);
+          }
+        })
+      );
+    }
+
+    this.loggerWinston = winston.createLogger({
+      level: 'info',
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.errors({ stack: true }),
+        winston.format.json()
+      ),
+      transports
+    });
+
+    this.app.use(logger('combined', {
+      stream: {
+        write: (message: string) => {
+          accessLogStream.write(message);
+          this.loggerWinston.info(message.trim());
+        }
+      }
+    }));
+  }
+
+  private async setupRoutes() {
+    const extractVersion = (filename: string): string | null => {
+      const match = filename.match(/v?(\d+\.\d+\.\d+|\d+)/);
+      return match ? match[1] : null;
+    };
+
+    const loadRoutes = async (basePath: string, filePath: string, version: string | null) => {
       try {
-        await import('file:///' + filePath);
+        const { default: router } = await import('file:///' + filePath);
+        const versionedPath = version ? `/v${version}${basePath}` : basePath;
+        this.app.use(versionedPath, router.getRouter());
+        this.swaggerApiFiles.push(filePath); // Add route file to Swagger API files list
       } catch (err) {
-        console.error(`Error loading file ${filePath}:`, err);
+        console.error(`Error loading routes from ${filePath}:`, err);
       }
-    } else if (endsWith(file, '.router.js') && endsWith(folderPath, 'routes')) {
-      const routerName = path.basename(file, '.router.js');
-      const version = extractVersion(routerName);
-      const basePath = `/${routerName.replace(`.${version}`, '')}`;
+    };
 
-      if (!routesMap.has(basePath)) {
-        routesMap.set(basePath, new Map());
-      }
-      routesMap.get(basePath).set(version || 'default', filePath);
-    }
-  };
+    const loadServer = async () => {
+      const isDirectory = (filePath: string): boolean => fs.existsSync(filePath) && fs.statSync(filePath).isDirectory();
 
-  const readModulesFolder = async (folderPath: any, overridePath: any) => {
-    try {
-      fs.readdirSync(folderPath).forEach(async (file) => {
+      const endsWith = (filePath: string, suffix: string): boolean => filePath.endsWith(suffix);
+      const routesMap = new Map<string, Map<string, string>>();
+
+      const processFile = async (folderPath: string, file: string) => {
         const filePath = path.join(folderPath, file);
-        const overrideFilePath = path.join(overridePath, file);
+
+        if (isDirectory(filePath)) {
+          await readModulesFolder(filePath, filePath);
+        } else if (endsWith(folderPath, 'public')) {
+          this.app.use(express.static(folderPath));
+        } else if (
+          (endsWith(file, '.listener.js') && endsWith(folderPath, 'listeners')) ||
+          (endsWith(file, '.consumer.js') && endsWith(folderPath, 'consumers')) ||
+          (endsWith(file, '.middleware.js') && endsWith(folderPath, 'middlewares')) ||
+          (endsWith(file, '.cron.js') && endsWith(folderPath, 'crons'))
+        ) {
+          try {
+            await import('file:///' + filePath);
+          } catch (err) {
+            console.error(`Error loading file ${filePath}:`, err);
+          }
+        } else if (endsWith(file, '.router.js') && endsWith(folderPath, 'routes')) {
+          const routerName = path.basename(file, '.router.js');
+          const version = extractVersion(routerName);
+          const basePath = `/${routerName.replace(`.${version}`, '')}`;
+
+          if (!routesMap.has(basePath)) {
+            routesMap.set(basePath, new Map());
+          }
+          routesMap.get(basePath)!.set(version || 'default', filePath);
+        }
+      };
+
+      const readModulesFolder = async (folderPath: string, overridePath: string) => {
+        try {
+          fs.readdirSync(folderPath).forEach(async (file) => {
+            const filePath = path.join(folderPath, file);
+
+            try {
+              if (isDirectory(filePath)) {
+                await readModulesFolder(filePath, overridePath);
+              } else {
+                if (overridePath && overridePath !== '') {
+                  const overrideFilePath = path.join(overridePath, file);
+                  if (fs.existsSync(overrideFilePath)) {
+                    await processFile(overridePath, file);
+                  }
+                } else {
+                  await processFile(folderPath, file);
+                }
+              }
+            } catch (err) {
+              console.error(`Error processing file ${file}:`, err);
+            }
+          });
+        } catch (err) {
+          console.error('Error reading directory:', err);
+        }
+      };
+
+      const loadMarketplaceModules = async () => {
+        const nodeModulesPath = path.join(this.__dirname, '../../../../node_modules');
+        const localModulesPath = path.join(this.__dirname, '../../../../modules');
 
         try {
-          if (isDirectory(filePath)) {
-            await readModulesFolder(filePath, overrideFilePath);
-          } else if (fs.existsSync(overrideFilePath)) {
-            await processFile(overridePath, file);
-          } else {
-            await processFile(folderPath, file);
-          }
-        } catch (err) {
-          console.error(`Error processing file ${file}:`, err);
-        }
-      });
-    } catch (err) {
-      console.error('Error reading directory:', err);
-    }
-  };
+          const moduleNames = fs.readdirSync(nodeModulesPath);
+          for (const moduleName of moduleNames) {
+            if (moduleName.startsWith('edrm-')) {
+              console.log('Loading EDRM module: ', moduleName);
+              const modulePath = path.join(nodeModulesPath, moduleName);
+              const localModulePath = path.join(localModulesPath, moduleName);
 
-  const readModulesFolderTS = async (folderPath: any) => {
-    try {
-      const distPath = path.join(folderPath, 'dist');
-      if (isDirectory(distPath)) {
-        fs.readdirSync(distPath).forEach(async (file) => {
-          try {
-            await processFileTS(distPath, file);
-          } catch (err) {
-            console.error(`Error processing file ${file} in distPath:`, err);
-          }
-        });
-      } else {
-        fs.readdirSync(folderPath).forEach(async (file) => {
-          try {
-            await processFileTS(folderPath, file);
-          } catch (err) {
-            console.error(`Error processing file ${file} in folderPath:`, err);
-          }
-        });
-      }
-    } catch (err) {
-      console.error('Error reading directory:', err);
-    }
-  };
-
-  // Function to load "edrm-" prefixed modules and allow for file-by-file overriding
-  const loadMarketplaceModules = async () => {
-    const nodeModulesPath = path.join(__dirname, '../../../node_modules');
-    const localModulesPath = path.join(__dirname, '../../../modules');
-
-    try {
-      const moduleNames = fs.readdirSync(nodeModulesPath);
-      for (const moduleName of moduleNames) {
-        if (moduleName.startsWith('edrm-')) {
-          console.log('Loading EDRM module: ', moduleName);
-          const modulePath = path.join(nodeModulesPath, moduleName);
-          const localModulePath = path.join(localModulesPath, moduleName);
-
-          if (isDirectory(modulePath)) {
-            try {
-              await readModulesFolder(modulePath, localModulePath);
-            } catch (err) {
-              console.error(`Error reading module folder ${modulePath}:`, err);
+              if (isDirectory(modulePath)) {
+                try {
+                  await readModulesFolder(modulePath, localModulePath);
+                } catch (err) {
+                  console.error(`Error reading module folder ${modulePath}:`, err);
+                }
+              }
             }
           }
+        } catch (err) {
+          console.error('Error reading node modules directory:', err);
+        }
+      };
+
+      // Load the marketplace modules
+      await loadMarketplaceModules();
+      // Load modules from the local modules folder
+      let modulesFolder = path.join(this.__dirname, '../../../../dist/modules');
+
+      if (isDirectory(modulesFolder)) {
+        await readModulesFolder(modulesFolder, '');
+      } else {
+        modulesFolder = path.join(this.__dirname, '../../../../src/modules');
+        await readModulesFolder(modulesFolder, '');
+      }
+
+      for (const [basePath, versionsMap] of routesMap) {
+        const sortedVersions = Array.from(versionsMap.keys()).sort((a, b) => {
+          if (a === 'default') return -1;
+          if (b === 'default') return 1;
+          return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+        });
+        for (let index = 0; index < sortedVersions.length; index++) {
+          const version = sortedVersions[index];
+          if (version === 'default') {
+            await loadRoutes(basePath, versionsMap.get(version)!, null);
+            console.log('Loaded routes :');
+          } else {
+            await loadRoutes(basePath, versionsMap.get(version)!, version);
+          }
+
+          if (index > 0) {
+            const previousVersion = sortedVersions[index - 1];
+            const fallbackPath = `/v${version}${basePath}`;
+            const previousPath = `/v${previousVersion}${basePath}`;
+
+            this.app.use(fallbackPath, (req: Request, res: Response, next: NextFunction) => {
+              req.url = previousPath + req.url;
+              next();
+            });
+          }
         }
       }
-    } catch (err) {
-      console.error('Error reading node modules directory:', err);
-    }
-  };
 
-  // Load the marketplace modules
-  await loadMarketplaceModules();
+      this.app.use((req: Request, res: Response, next: NextFunction) => {
+        if (req.originalUrl === '/favicon.ico') {
+          res.status(204).end(); // No Content
+        } else {
+          next();
+        }
+      });
 
-  // Load modules from the local modules folder
-  const modulesFolder = path.join(__dirname, '../../../modules');
-  // @ts-expect-error TS(2554): Expected 1 arguments, but got 2.
-  await readModulesFolderTS(modulesFolder, modulesFolder);
-
-  for (const [basePath, versionsMap] of routesMap) {
-    const sortedVersions = Array.from(versionsMap.keys()).sort((a, b) => {
-      if (a === 'default') return -1;
-      if (b === 'default') return 1;
-      // @ts-expect-error TS(2571): Object is of type 'unknown'.
-      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-    });
-    for (let index = 0; index < sortedVersions.length; index++) {
-      const version = sortedVersions[index];
-      if (version === 'default') {
-        await loadRoutes(app, basePath, versionsMap.get(version), null);
-        console.log('loaded default route');
-      } else {
-        await loadRoutes(app, basePath, versionsMap.get(version), version);
+      const enableSwagger = process.env.SWAGGER !== 'false';
+      if (enableSwagger) {
+        console.log(this.swaggerApiFiles);
+        const swaggerSpec = enduranceSwagger.generateSwaggerSpec(this.swaggerApiFiles);
+        await enduranceSwagger.setupSwagger(this.app, swaggerSpec);
       }
 
-      // Set up fallback to previous versions if not defined
-      if (index > 0) {
-        const previousVersion = sortedVersions[index - 1];
-        const fallbackPath = `/v${version}${basePath}`;
-        const previousPath = `/v${previousVersion}${basePath}`;
-
-        app.use(fallbackPath, (req: any, res: any, next: any) => {
-          req.url = previousPath + req.url;
-          next();
+      if (process.env.NODE_ENV !== 'production') {
+        this.app.get('/cause-error', (req: Request, res: Response) => {
+          const error = new Error('Intentional error');
+          (error as any).status = 500;
+          res.status(500).json({ message: error.message });
         });
       }
     };
-  };
 
-  app.use((req: any, res: any, next: any) => {
-    if (req.originalUrl === '/favicon.ico') {
-      res.status(204).end(); // No Content
-    } else {
-      next();
-    }
-  });
-
-  const enableSwagger = process.env.SWAGGER !== 'false';
-  if (enableSwagger) {
-    // Swagger setup
-    console.log(swaggerApiFiles);
-    const swaggerSpec = generateSwaggerSpec(swaggerApiFiles);
-    await setupSwagger(app, swaggerSpec); // Ensure setupSwagger is awaited
+    await loadServer();
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    app.get('/cause-error', (req, res, next) => {
-      console.log('cause-error');
-      const error = new Error('Intentional error');
-      (error as any).status = 500;
-      res.status(500).json({ message: error.message });
+  private setupErrorHandling() {
+    this.app.use((req: Request, res: Response, next: NextFunction) => {
+      next(createError(404));
+    });
+
+    this.app.use((err: any, req: Request, res: Response) => {
+      res.locals.message = err.message;
+      res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+      res.status(err.status || 500);
+      res.render('error');
     });
   }
 
-  // catch 404 and forward to error handler
-  app.use(function (req: any, res: any, next: any) {
-    next(createError(404));
-  });
+  private setupDatabase() {
+    if (process.env.MONGODB_HOST) {
+      import('./database.js').then(({ enduranceDatabase }) => {
+        this.app.use(
+          session({
+            secret: process.env.SESSION_SECRET || 'endurance',
+            resave: false,
+            saveUninitialized: false,
+            store: enduranceDatabase.createStore()
+          })
+        );
 
-  // error handler
-  app.use(function (err: any, req: any, res: any) {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-    // render the error page
-    res.status(err.status || 500);
-    res.render('error');
-  });
-
-  console.log(`Server listening on port ${port}`);
-  // @ts-expect-error TS(2339): Property 'APP_STARTED' does not exist on type '{}'... Remove this comment to see the full error message
-  emitter.emit(eventTypes.APP_STARTED);
-};
-
-if (process.env.MONGODB_HOST) {
-  // Import lib
-  import('./database.js').then(({ connect, createStore }) => {
-    app.use(
-      session({
-        secret: process.env.SESSION_SECRET || 'endurance',
-        resave: false,
-        saveUninitialized: false,
-        store: createStore()
-      })
-    );
-
-    connect()
-      .then(() => {
-        loadServer(true);
-      })
-      .catch((err: any) => {
-        console.error('Error connecting to MongoDB', err);
+        enduranceDatabase.connect()
+          .then(() => {
+            this.startServer();
+          })
+          .catch((err: Error) => {
+            console.error('Error connecting to MongoDB', err);
+          });
       });
-  });
-} else {
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || 'endurance',
-      resave: false,
-      saveUninitialized: false,
-      store: new session.MemoryStore()
-    })
-  );
-  loadServer(false);
+    } else {
+      this.app.use(
+        session({
+          secret: process.env.SESSION_SECRET || 'endurance',
+          resave: false,
+          saveUninitialized: false,
+          store: new session.MemoryStore()
+        })
+      );
+      this.startServer();
+    }
+  }
+
+  private startServer() {
+    console.log(`
+      ______           _                                
+     |  ____|         | |                               
+     | |__   _ __   __| |_   _ _ __ __ _ _ __   ___ ___ 
+     |  __| | '_ \\ / _\` | | | | '__/ _\` | '_ \\ / __/ _ \\
+     | |____| | | | (_| | |_| | | | (_| | | | | (_|  __/
+     |______|_| |_|\\__,_|\\__,_|_|  \\__,_|_| |_|\\___\\___|
+                                                        
+                                                        
+    `);
+    this.app.listen(this.port, () => {
+      console.log(`Server listening on port ${this.port}`);
+      enduranceEmitter.emit(enduranceEventTypes.APP_STARTED);
+    });
+  }
 }
 
-export default app;
+export default new EnduranceApp().app;
