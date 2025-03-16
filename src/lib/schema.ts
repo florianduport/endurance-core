@@ -1,5 +1,5 @@
 import { getModelForClass, pre, prop } from '@typegoose/typegoose';
-import { enduranceEmitter } from './emitter';
+import { enduranceEmitter } from './emitter.js';
 
 @pre('save', function (this: any) {
     enduranceEmitter.emit(`${this.constructor.name}:preSave`, this);
