@@ -1,16 +1,11 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
 import { enduranceDatabase } from './database.js';
+import { EnduranceSchema } from './schema.js';
 
 type AccessControl = {
   checkUserPermissions?: (req: Request, res: Response, next: NextFunction) => void;
   restrictToOwner?: (req: Request, res: Response, next: NextFunction) => void;
 };
-
-interface Model {
-  findById(id: string): Promise<any>;
-  find(): Promise<any[]>;
-  new(data: any): any;
-}
 
 class EnduranceRouter {
   private router: Router;
@@ -46,7 +41,7 @@ class EnduranceRouter {
     this.router.use(handler);
   }
 
-  public autoWire(Model: Model, modelName: string, accessControl: AccessControl = {}) {
+  public autoWire(modelClass: typeof EnduranceSchema, modelName: string, accessControl: AccessControl = {}) {
     const {
       checkUserPermissions = (req: Request, res: Response, next: NextFunction) => next(),
       restrictToOwner = (req: Request, res: Response, next: NextFunction) => next()
@@ -54,7 +49,8 @@ class EnduranceRouter {
 
     const getItem = async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const item = await Model.findById(req.params.id);
+        const model = modelClass.getModel();
+        const item = await model.findById(req.params.id);
         if (!item) {
           res.status(404).json({ message: `${modelName} not found` });
           return;
@@ -72,7 +68,8 @@ class EnduranceRouter {
 
     this.router.get('/', checkUserPermissions, async (req: Request, res: Response) => {
       try {
-        const items = await Model.find();
+        const model = modelClass.getModel();
+        const items = await model.find();
         res.json(items);
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -88,6 +85,7 @@ class EnduranceRouter {
     });
 
     this.router.post('/', checkUserPermissions, async (req: Request, res: Response) => {
+      const Model = modelClass.getModel();
       const item = new Model(req.body);
       try {
         const newItem = await item.save();

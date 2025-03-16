@@ -6,8 +6,8 @@ interface AuthParams {
   storeRefreshTokenFn?: () => void;
   getStoredRefreshTokenFn?: () => void;
   deleteStoredRefreshTokenFn?: () => void;
-  checkUserPermissionsFn?: () => (req: any, res: any, next: any) => void;
-  restrictToOwnerFn?: () => (req: any, res: any, next: any) => void;
+  checkUserPermissionsFn?: (req: any, res: any, next: any) => any;
+  restrictToOwnerFn?: () => (req: any, res: any, next: any) => any;
   authenticateLocalAndGenerateTokensFn?: () => (req: any, res: any, next: any) => void;
   authenticateAzureAndGenerateTokensFn?: () => (req: any, res: any, next: any) => void;
   generateAzureTokensFn?: () => (req: any, res: any, next: any) => void;
@@ -23,95 +23,91 @@ interface AuthParams {
   configureAzureJwtStrategyFn?: () => void;
 }
 
-const authModule = (() => {
-  let isInitialized = false;
+class EnduranceAuth {
+  private isInitialized = false;
+  private getUserById: (...args: any[]) => void = (...args) => { throw new Error('getUserById not implemented'); };
+  private validatePassword: (...args: any[]) => void = (...args) => { throw new Error('validatePassword not implemented'); };
+  private storeRefreshToken: (...args: any[]) => void = (...args) => { };
+  private getStoredRefreshToken: (...args: any[]) => void = (...args) => { };
+  private deleteStoredRefreshToken: (...args: any[]) => void = (...args) => { };
+  private checkUserPermissions: (...args: any[]) => void = (...args) => { };
+  private restrictToOwner: (...args: any[]) => void = (...args) => { };
+  private authenticateLocalAndGenerateTokens: (...args: any[]) => void = (...args) => { };
+  private authenticateAzureAndGenerateTokens: (...args: any[]) => void = (...args) => { };
+  private generateAzureTokens: (...args: any[]) => void = (...args) => { };
+  private refreshJwt: (...args: any[]) => void = (...args) => { };
+  private revokeRefreshToken: (...args: any[]) => void = (...args) => { };
+  private isAuthenticated: (...args: any[]) => void = (...args) => { };
+  private authorize: (...args: any[]) => void = (...args) => { };
+  private generateToken: (...args: any[]) => void = (...args) => { throw new Error('generateToken not implemented'); };
+  private handleAuthError: (err: any, req: any, res: any, next: any) => void = (err, req, res, next) => res.status(401).json({ message: err.message });
 
-  let getUserById: (...args: any[]) => void = (...args) => { throw new Error('getUserById not implemented'); };
-  let validatePassword: (...args: any[]) => void = (...args) => { throw new Error('validatePassword not implemented'); };
-  let storeRefreshToken: (...args: any[]) => void = (...args) => { };
-  let getStoredRefreshToken: (...args: any[]) => void = (...args) => { };
-  let deleteStoredRefreshToken: (...args: any[]) => void = (...args) => { };
-  let checkUserPermissions: (...args: any[]) => void = (...args) => { };
-  let restrictToOwner: (...args: any[]) => void = (...args) => { };
-  let authenticateLocalAndGenerateTokens: (...args: any[]) => void = (...args) => { };
-  let authenticateAzureAndGenerateTokens: (...args: any[]) => void = (...args) => { };
-  let generateAzureTokens: (...args: any[]) => void = (...args) => { };
-  let refreshJwt: (...args: any[]) => void = (...args) => { };
-  let revokeRefreshToken: (...args: any[]) => void = (...args) => { };
-  let isAuthenticated: (...args: any[]) => void = (...args) => { };
-  let authorize: (...args: any[]) => void = (...args) => { };
-  let generateToken: (...args: any[]) => void = (...args) => { throw new Error('generateToken not implemented'); };
-  const generateRefreshToken = (...args: any[]): string => crypto.randomBytes(40).toString('hex');
-  let handleAuthError: (err: any, req: any, res: any, next: any) => void = (err, req, res, next) => res.status(401).json({ message: err.message });
+  public generateRefreshToken = (...args: any[]): string => crypto.randomBytes(40).toString('hex');
 
-  const asyncHandler = (fn: (req: any, res: any, next: any) => Promise<void>) => (req: any, res: any, next: any) => {
+  public asyncHandler = (fn: (req: any, res: any, next: any) => Promise<void>) => (req: any, res: any, next: any) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 
-  const initializeAuth = (params: AuthParams = {}) => {
-    if (isInitialized) {
+  public initializeAuth(params: AuthParams = {}) {
+    if (this.isInitialized) {
       console.warn('[Auth] Auth module is already initialized.');
       return;
     }
 
     console.log('[Auth] Initializing auth module...');
 
-    getUserById = params.getUserFn || getUserById;
-    validatePassword = params.validatePasswordFn || validatePassword;
-    storeRefreshToken = params.storeRefreshTokenFn || storeRefreshToken;
-    getStoredRefreshToken = params.getStoredRefreshTokenFn || getStoredRefreshToken;
-    deleteStoredRefreshToken = params.deleteStoredRefreshTokenFn || deleteStoredRefreshToken;
-    checkUserPermissions = params.checkUserPermissionsFn || checkUserPermissions;
-    restrictToOwner = params.restrictToOwnerFn || restrictToOwner;
-    authenticateLocalAndGenerateTokens = params.authenticateLocalAndGenerateTokensFn || authenticateLocalAndGenerateTokens;
-    authenticateAzureAndGenerateTokens = params.authenticateAzureAndGenerateTokensFn || authenticateAzureAndGenerateTokens;
-    generateAzureTokens = params.generateAzureTokensFn || generateAzureTokens;
-    refreshJwt = params.refreshJwtFn || refreshJwt;
-    revokeRefreshToken = params.revokeRefreshTokenFn || revokeRefreshToken;
-    isAuthenticated = params.authenticateJwtFn || isAuthenticated;
-    authorize = params.authorizeFn || authorize;
-    generateToken = params.generateTokenFn || generateToken;
-    handleAuthError = params.handleAuthErrorFn || handleAuthError;
+    this.getUserById = params.getUserFn || this.getUserById;
+    this.validatePassword = params.validatePasswordFn || this.validatePassword;
+    this.storeRefreshToken = params.storeRefreshTokenFn || this.storeRefreshToken;
+    this.getStoredRefreshToken = params.getStoredRefreshTokenFn || this.getStoredRefreshToken;
+    this.deleteStoredRefreshToken = params.deleteStoredRefreshTokenFn || this.deleteStoredRefreshToken;
+    this.checkUserPermissions = params.checkUserPermissionsFn || this.checkUserPermissions;
+    this.restrictToOwner = params.restrictToOwnerFn || this.restrictToOwner;
+    this.authenticateLocalAndGenerateTokens = params.authenticateLocalAndGenerateTokensFn || this.authenticateLocalAndGenerateTokens;
+    this.authenticateAzureAndGenerateTokens = params.authenticateAzureAndGenerateTokensFn || this.authenticateAzureAndGenerateTokens;
+    this.generateAzureTokens = params.generateAzureTokensFn || this.generateAzureTokens;
+    this.refreshJwt = params.refreshJwtFn || this.refreshJwt;
+    this.revokeRefreshToken = params.revokeRefreshTokenFn || this.revokeRefreshToken;
+    this.isAuthenticated = params.authenticateJwtFn || this.isAuthenticated;
+    this.authorize = params.authorizeFn || this.authorize;
+    this.generateToken = params.generateTokenFn || this.generateToken;
+    this.handleAuthError = params.handleAuthErrorFn || this.handleAuthError;
 
     if (typeof params.configureJwtStrategyFn === 'function') params.configureJwtStrategyFn();
     if (typeof params.configureLocalStrategyFn === 'function') params.configureLocalStrategyFn();
     if (typeof params.configureAzureStrategyFn === 'function') params.configureAzureStrategyFn();
     if (typeof params.configureAzureJwtStrategyFn === 'function') params.configureAzureJwtStrategyFn();
 
-    isInitialized = true;
+    this.isInitialized = true;
     console.log('[Auth] Auth middleware initialized successfully.');
+  }
+
+  public accessControl = {
+    checkUserPermissions: (...args: any[]) => this.checkUserPermissions(...args),
+    restrictToOwner: (...args: any[]) => this.restrictToOwner(...args),
+    authorize: (...args: any[]) => this.authorize(...args),
+    isAuthenticated: (...args: any[]) => this.isAuthenticated(...args)
   };
 
-  const accessControl = {
-    checkUserPermissions: (...args: any[]) => checkUserPermissions(...args),
-    restrictToOwner: (...args: any[]) => restrictToOwner(...args),
-    authorize: (...args: any[]) => authorize(...args),
-    isAuthenticated: (...args: any[]) => isAuthenticated(...args)
+  public auth = {
+    initializeAuth: this.initializeAuth.bind(this),
+    getUserById: (...args: any[]) => this.getUserById(...args),
+    validatePassword: (...args: any[]) => this.validatePassword(...args),
+    storeRefreshToken: (...args: any[]) => this.storeRefreshToken(...args),
+    getStoredRefreshToken: (...args: any[]) => this.getStoredRefreshToken(...args),
+    deleteStoredRefreshToken: (...args: any[]) => this.deleteStoredRefreshToken(...args),
+    authenticateLocalAndGenerateTokens: (...args: any[]) => this.authenticateLocalAndGenerateTokens(...args),
+    authenticateAzureAndGenerateTokens: (...args: any[]) => this.authenticateAzureAndGenerateTokens(...args),
+    generateAzureTokens: (...args: any[]) => this.generateAzureTokens(...args),
+    refreshJwt: (...args: any[]) => this.refreshJwt(...args),
+    revokeRefreshToken: (...args: any[]) => this.revokeRefreshToken(...args),
+    isAuthenticated: (...args: any[]) => this.isAuthenticated(...args),
+    generateToken: (...args: any[]) => this.generateToken(...args),
+    generateRefreshToken: (...args: any[]) => this.generateRefreshToken(...args),
+    handleAuthError: (err: any, req: any, res: any, next: any) => this.handleAuthError(err, req, res, next),
+    asyncHandler: this.asyncHandler
   };
+}
 
-  const auth = {
-    initializeAuth,
-    getUserById: (...args: any[]) => getUserById(...args),
-    validatePassword: (...args: any[]) => validatePassword(...args),
-    storeRefreshToken: (...args: any[]) => storeRefreshToken(...args),
-    getStoredRefreshToken: (...args: any[]) => getStoredRefreshToken(...args),
-    deleteStoredRefreshToken: (...args: any[]) => deleteStoredRefreshToken(...args),
-    authenticateLocalAndGenerateTokens: (...args: any[]) => authenticateLocalAndGenerateTokens(...args),
-    authenticateAzureAndGenerateTokens: (...args: any[]) => authenticateAzureAndGenerateTokens(...args),
-    generateAzureTokens: (...args: any[]) => generateAzureTokens(...args),
-    refreshJwt: (...args: any[]) => refreshJwt(...args),
-    revokeRefreshToken: (...args: any[]) => revokeRefreshToken(...args),
-    isAuthenticated: (...args: any[]) => isAuthenticated(...args),
-    generateToken: (...args: any[]) => generateToken(...args),
-    generateRefreshToken: (...args: any[]) => generateRefreshToken(...args),
-    handleAuthError: (err: any, req: any, res: any, next: any) => handleAuthError(err, req, res, next),
-    asyncHandler
-  };
-
-  return {
-    accessControl,
-    auth
-  };
-})();
-
-export const { accessControl, auth } = authModule;
+const enduranceAuth = new EnduranceAuth();
+export const { accessControl, auth } = enduranceAuth;
