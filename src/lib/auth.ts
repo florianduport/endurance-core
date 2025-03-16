@@ -23,24 +23,24 @@ interface AuthParams {
   configureAzureJwtStrategyFn?: () => void;
 }
 
-class EnduranceAuth {
-  private isInitialized = false;
-  private getUserById: (...args: any[]) => void = (...args) => { throw new Error('getUserById not implemented'); };
-  private validatePassword: (...args: any[]) => void = (...args) => { throw new Error('validatePassword not implemented'); };
-  private storeRefreshToken: (...args: any[]) => void = (...args) => { };
-  private getStoredRefreshToken: (...args: any[]) => void = (...args) => { };
-  private deleteStoredRefreshToken: (...args: any[]) => void = (...args) => { };
-  private checkUserPermissions: (...args: any[]) => void = (...args) => { };
-  private restrictToOwner: (...args: any[]) => void = (...args) => { };
-  private authenticateLocalAndGenerateTokens: (...args: any[]) => void = (...args) => { };
-  private authenticateAzureAndGenerateTokens: (...args: any[]) => void = (...args) => { };
-  private generateAzureTokens: (...args: any[]) => void = (...args) => { };
-  private refreshJwt: (...args: any[]) => void = (...args) => { };
-  private revokeRefreshToken: (...args: any[]) => void = (...args) => { };
-  private isAuthenticated: (...args: any[]) => void = (...args) => { };
-  private authorize: (...args: any[]) => void = (...args) => { };
-  private generateToken: (...args: any[]) => void = (...args) => { throw new Error('generateToken not implemented'); };
-  private handleAuthError: (err: any, req: any, res: any, next: any) => void = (err, req, res, next) => res.status(401).json({ message: err.message });
+abstract class EnduranceAuth {
+  protected isInitialized = false;
+  protected getUserById: (...args: any[]) => void = (...args) => { throw new Error('getUserById not implemented'); };
+  protected validatePassword: (...args: any[]) => void = (...args) => { throw new Error('validatePassword not implemented'); };
+  protected storeRefreshToken: (...args: any[]) => void = (...args) => { };
+  protected getStoredRefreshToken: (...args: any[]) => void = (...args) => { };
+  protected deleteStoredRefreshToken: (...args: any[]) => void = (...args) => { };
+  protected checkUserPermissions: (...args: any[]) => void = (...args) => { };
+  protected restrictToOwner: (...args: any[]) => void = (...args) => { };
+  protected authenticateLocalAndGenerateTokens: (...args: any[]) => void = (...args) => { };
+  protected authenticateAzureAndGenerateTokens: (...args: any[]) => void = (...args) => { };
+  protected generateAzureTokens: (...args: any[]) => void = (...args) => { };
+  protected refreshJwt: (...args: any[]) => void = (...args) => { };
+  protected revokeRefreshToken: (...args: any[]) => void = (...args) => { };
+  protected isAuthenticated: (...args: any[]) => void = (...args) => { };
+  protected authorize: (...args: any[]) => void = (...args) => { };
+  protected generateToken: (...args: any[]) => void = (...args) => { throw new Error('generateToken not implemented'); };
+  protected handleAuthError: (err: any, req: any, res: any, next: any) => void = (err, req, res, next) => res.status(401).json({ message: err.message });
 
   public generateRefreshToken = (...args: any[]): string => crypto.randomBytes(40).toString('hex');
 
@@ -109,5 +109,4 @@ class EnduranceAuth {
   };
 }
 
-const enduranceAuth = new EnduranceAuth();
-export const { accessControl, auth } = enduranceAuth;
+export { EnduranceAuth };
