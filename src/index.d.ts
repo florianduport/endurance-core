@@ -4,10 +4,10 @@ declare module 'endurance-core' {
     export { enduranceConsumer } from './lib/consumer.js';
     export { enduranceCron } from './lib/cron.js';
     export { enduranceDatabase } from './lib/database.js';
-    export { EnduranceSchema, prop, pre } from './lib/schema.js';
+    export { EnduranceSchema, prop, pre, ReturnModelType } from './lib/schema.js';
     export { enduranceEmitter, enduranceEventTypes } from './lib/emitter.js';
     export { enduranceListener } from './lib/listener.js';
     export { enduranceNotificationManager } from './lib/notification.js';
-    export { createRouter, Request, Response } from './lib/router.js';
+    export { EnduranceRouter, Request, Response } from './lib/router.js';
     export { enduranceSwagger } from './lib/swagger.js';
 }

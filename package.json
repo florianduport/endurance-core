@@ -1,6 +1,6 @@
 {
   "name": "endurance-core",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "description": "endurance framework core lib",
   "main": "./dist/index.js",
   "type": "module",
@@ -57,6 +57,7 @@
     "@types/jest": "^29.5.14",
     "@types/mongoose": "^5.11.96",
     "@types/morgan": "^1.9.9",
+    "@types/node": "^22.13.10",
     "@types/node-cron": "^3.0.11",
     "@types/supertest": "^6.0.2",
     "@types/swagger-jsdoc": "^6.0.4",
@@ -69,6 +70,7 @@
     "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-promise": "^6.6.0",
     "jest": "^29.7.0",
+    "reflect-metadata": "^0.2.2",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.6",
     "ts-migrate": "^0.1.35",

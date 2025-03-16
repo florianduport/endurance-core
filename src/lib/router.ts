@@ -132,8 +132,4 @@ class EnduranceRouter {
   }
 }
 
-const createRouter = (options?: { requireDb?: boolean }) => {
-  return new EnduranceRouter(options);
-};
-
-export { createRouter as default, Request, Response };
+export { EnduranceRouter, Request, Response };

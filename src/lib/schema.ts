@@ -1,4 +1,4 @@
-import { getModelForClass, pre, prop } from '@typegoose/typegoose';
+import { getModelForClass, pre, prop, ReturnModelType } from '@typegoose/typegoose';
 import { enduranceEmitter } from './emitter.js';
 
 @pre('save', function (this: any) {
@@ -25,4 +25,4 @@ export abstract class EnduranceSchema {
     }
 }
 
-export { prop, pre };
+export { prop, pre, ReturnModelType };
