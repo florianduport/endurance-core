@@ -1,6 +1,6 @@
 export { default as app } from './lib/app.js';
 export { EnduranceAuth } from './lib/auth.js';
-export { EnduranceSchema, prop, pre, ReturnModelType } from './lib/schema.js';
+export { EnduranceSchema, prop, pre, ReturnModelType, Ref } from './lib/schema.js';
 export { EnduranceRouter, Request, Response } from './lib/router.js';
 export { enduranceConsumer } from './lib/consumer.js';
 export { enduranceCron } from './lib/cron.js';
