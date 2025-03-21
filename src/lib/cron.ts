@@ -28,7 +28,6 @@ class EnduranceCron {
 
     this.scheduledTasks.set(upperName, task);
   }
-
 }
 
 export const enduranceCron = new EnduranceCron();
