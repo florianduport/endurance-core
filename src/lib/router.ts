@@ -203,4 +203,4 @@ abstract class EnduranceRouter {
   }
 }
 
-export { EnduranceRouter, Request, Response, type SecurityOptions };
+export { EnduranceRouter, Request, Response, NextFunction, type SecurityOptions };
