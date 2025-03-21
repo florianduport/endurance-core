@@ -29,18 +29,6 @@ class EnduranceCron {
     this.scheduledTasks.set(upperName, task);
   }
 
-  public unloadCronJob(name: string): void {
-    const upperName = name.toUpperCase();
-    const taskToStop = this.scheduledTasks.get(upperName);
-
-    if (taskToStop) {
-      taskToStop.stop();
-      this.scheduledTasks.delete(upperName);
-      enduranceEmitter.emit(`${upperName}_CRONUNLOAD`);
-    } else {
-      console.warn(`No scheduled task found for ${upperName}`);
-    }
-  }
 }
 
 export const enduranceCron = new EnduranceCron();

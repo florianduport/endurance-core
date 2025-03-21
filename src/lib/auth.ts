@@ -45,10 +45,22 @@ abstract class EnduranceAuth {
 abstract class EnduranceAuthMiddleware {
   public accessControl: EnduranceAccessControl;
   public auth: EnduranceAuth;
+  private static instance: EnduranceAuthMiddleware;
 
   constructor(accessControlInstance: EnduranceAccessControl, authInstance: EnduranceAuth) {
     this.accessControl = accessControlInstance;
     this.auth = authInstance;
+  }
+
+  public static getInstance(): EnduranceAuthMiddleware {
+    if (!EnduranceAuthMiddleware.instance) {
+      throw new Error("Instance not set. Use setInstance to initialize.");
+    }
+    return EnduranceAuthMiddleware.instance;
+  }
+
+  public static setInstance(instance: EnduranceAuthMiddleware): void {
+    EnduranceAuthMiddleware.instance = instance;
   }
 }
 
