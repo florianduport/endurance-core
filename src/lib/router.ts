@@ -58,7 +58,14 @@ abstract class EnduranceRouter {
     ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
-    this.router.get(path, ...middlewares, ...handlers);
+    const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        await handler(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    });
+    this.router.get(path, ...middlewares, ...wrappedHandlers);
   }
 
   public post(
@@ -67,7 +74,14 @@ abstract class EnduranceRouter {
     ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
-    this.router.post(path, ...middlewares, ...handlers);
+    const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        await handler(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    });
+    this.router.post(path, ...middlewares, ...wrappedHandlers);
   }
 
   public put(
@@ -76,7 +90,14 @@ abstract class EnduranceRouter {
     ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
-    this.router.put(path, ...middlewares, ...handlers);
+    const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        await handler(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    });
+    this.router.put(path, ...middlewares, ...wrappedHandlers);
   }
 
   public delete(
@@ -85,7 +106,14 @@ abstract class EnduranceRouter {
     ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
-    this.router.delete(path, ...middlewares, ...handlers);
+    const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        await handler(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    });
+    this.router.delete(path, ...middlewares, ...wrappedHandlers);
   }
 
   public patch(
@@ -94,7 +122,14 @@ abstract class EnduranceRouter {
     ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
-    this.router.patch(path, ...middlewares, ...handlers);
+    const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        await handler(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    });
+    this.router.patch(path, ...middlewares, ...wrappedHandlers);
   }
 
   protected autoWireSecure(
