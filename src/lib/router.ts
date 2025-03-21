@@ -107,8 +107,8 @@ abstract class EnduranceRouter {
     // GET /
     this.get('/', securityOptions, async (req: Request, res: Response) => {
       try {
-        const model = modelClass.getModel();
-        const items = await model.find();
+        const Model = modelClass.getModel();
+        const items = await Model.find();
         res.json(items);
       } catch (err) {
         if (this.authMiddleware) {
@@ -122,8 +122,8 @@ abstract class EnduranceRouter {
     // GET /:id
     this.get('/:id', securityOptions, async (req: Request, res: Response) => {
       try {
-        const model = modelClass.getModel();
-        const item = await model.findById(req.params.id);
+        const Model = modelClass.getModel();
+        const item = await Model.findById(req.params.id);
         if (!item) {
           return res.status(404).json({ message: `${modelName} not found` });
         }
@@ -140,8 +140,8 @@ abstract class EnduranceRouter {
     // POST /
     this.post('/', securityOptions, async (req: Request, res: Response) => {
       try {
-        const model = modelClass.getModel();
-        const item = new model(req.body);
+        const Model = modelClass.getModel();
+        const item = new Model(req.body);
         const savedItem = await item.save();
         res.status(201).json(savedItem);
       } catch (err) {
@@ -156,8 +156,8 @@ abstract class EnduranceRouter {
     // PATCH /:id
     this.patch('/:id', securityOptions, async (req: Request, res: Response) => {
       try {
-        const model = modelClass.getModel();
-        const item = await model.findById(req.params.id);
+        const Model = modelClass.getModel();
+        const item = await Model.findById(req.params.id);
         if (!item) {
           return res.status(404).json({ message: `${modelName} not found` });
         }
@@ -176,8 +176,8 @@ abstract class EnduranceRouter {
     // DELETE /:id
     this.delete('/:id', securityOptions, async (req: Request, res: Response) => {
       try {
-        const model = modelClass.getModel();
-        const item = await model.findById(req.params.id);
+        const Model = modelClass.getModel();
+        const item = await Model.findById(req.params.id);
         if (!item) {
           return res.status(404).json({ message: `${modelName} not found` });
         }
