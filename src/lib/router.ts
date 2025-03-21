@@ -8,6 +8,8 @@ type SecurityOptions = {
   requireAuth?: boolean;
 }
 
+type RequestHandler = (req: Request, res: Response, next: NextFunction) => void | Promise<void>;
+
 abstract class EnduranceRouter {
   protected router: Router;
   protected authMiddleware?: EnduranceAuthMiddleware;
@@ -20,14 +22,14 @@ abstract class EnduranceRouter {
 
   protected abstract setupRoutes(): void;
 
-  protected buildSecurityMiddleware(options: SecurityOptions = {}): Array<(req: Request, res: Response, next: NextFunction) => void> {
+  protected buildSecurityMiddleware(options: SecurityOptions = {}): Array<RequestHandler> {
     const {
       requireAuth = true,
       checkOwnership = false,
       permissions = []
     } = options;
 
-    const middlewares: Array<(req: Request, res: Response, next: NextFunction) => void> = [];
+    const middlewares: Array<RequestHandler> = [];
 
     if (!this.authMiddleware) {
       return middlewares;
@@ -53,7 +55,7 @@ abstract class EnduranceRouter {
   public get(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+    ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     this.router.get(path, ...middlewares, ...handlers);
@@ -62,7 +64,7 @@ abstract class EnduranceRouter {
   public post(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+    ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     this.router.post(path, ...middlewares, ...handlers);
@@ -71,7 +73,7 @@ abstract class EnduranceRouter {
   public put(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+    ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     this.router.put(path, ...middlewares, ...handlers);
@@ -80,7 +82,7 @@ abstract class EnduranceRouter {
   public delete(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+    ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     this.router.delete(path, ...middlewares, ...handlers);
@@ -89,7 +91,7 @@ abstract class EnduranceRouter {
   public patch(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+    ...handlers: Array<RequestHandler>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     this.router.patch(path, ...middlewares, ...handlers);
@@ -125,7 +127,8 @@ abstract class EnduranceRouter {
         const Model = modelClass.getModel();
         const item = await Model.findById(req.params.id);
         if (!item) {
-          return res.status(404).json({ message: `${modelName} not found` });
+          res.status(404).json({ message: `${modelName} not found` });
+          return;
         }
         res.json(item);
       } catch (err) {
@@ -159,7 +162,8 @@ abstract class EnduranceRouter {
         const Model = modelClass.getModel();
         const item = await Model.findById(req.params.id);
         if (!item) {
-          return res.status(404).json({ message: `${modelName} not found` });
+          res.status(404).json({ message: `${modelName} not found` });
+          return;
         }
         Object.assign(item, req.body);
         const updatedItem = await item.save();
@@ -179,7 +183,8 @@ abstract class EnduranceRouter {
         const Model = modelClass.getModel();
         const item = await Model.findById(req.params.id);
         if (!item) {
-          return res.status(404).json({ message: `${modelName} not found` });
+          res.status(404).json({ message: `${modelName} not found` });
+          return;
         }
         await item.deleteOne();
         res.json({ message: `${modelName} deleted successfully` });
