@@ -1,127 +1,193 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
-import { enduranceDatabase } from './database.js';
 import { EnduranceSchema } from './schema.js';
+import { EnduranceAuthMiddleware } from './auth.js';
 
-type AccessControl = {
-  checkUserPermissions?: (req: Request, res: Response, next: NextFunction) => void;
-  restrictToOwner?: (req: Request, res: Response, next: NextFunction) => void;
-};
+type SecurityOptions = {
+  permissions?: string[];
+  checkOwnership?: boolean;
+  requireAuth?: boolean;
+}
 
-class EnduranceRouter {
-  private router: Router;
+abstract class EnduranceRouter {
+  protected router: Router;
+  protected authMiddleware?: EnduranceAuthMiddleware;
 
-  constructor(options?: { requireDb?: boolean }) {
+  constructor(authMiddleware?: EnduranceAuthMiddleware) {
     this.router = express.Router();
-    if (options && options.requireDb) {
-      enduranceDatabase.checkRequiredEnvVars();
-    }
+    this.authMiddleware = authMiddleware;
+    this.setupRoutes();
   }
 
-  public get(path: string, ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>) {
-    this.router.get(path, ...handlers);
-  }
+  protected abstract setupRoutes(): void;
 
-  public post(path: string, ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>) {
-    this.router.post(path, ...handlers);
-  }
-
-  public put(path: string, ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>) {
-    this.router.put(path, ...handlers);
-  }
-
-  public delete(path: string, ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>) {
-    this.router.delete(path, ...handlers);
-  }
-
-  public patch(path: string, ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>) {
-    this.router.patch(path, ...handlers);
-  }
-
-  public use(handler: (req: Request, res: Response, next: NextFunction) => void) {
-    this.router.use(handler);
-  }
-
-  public autoWire(modelClass: typeof EnduranceSchema, modelName: string, accessControl: AccessControl = {}) {
+  protected buildSecurityMiddleware(options: SecurityOptions = {}): Array<(req: Request, res: Response, next: NextFunction) => void> {
     const {
-      checkUserPermissions = (req: Request, res: Response, next: NextFunction) => next(),
-      restrictToOwner = (req: Request, res: Response, next: NextFunction) => next()
-    } = accessControl;
+      requireAuth = true,
+      checkOwnership = false,
+      permissions = []
+    } = options;
 
-    const getItem = async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const model = modelClass.getModel();
-        const item = await model.findById(req.params.id);
-        if (!item) {
-          res.status(404).json({ message: `${modelName} not found` });
-          return;
-        }
-        res.locals.item = item;
-        next();
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          res.status(500).json({ message: err.message });
-        } else {
-          res.status(500).json({ message: 'Unknown error' });
-        }
-      }
-    };
+    const middlewares: Array<(req: Request, res: Response, next: NextFunction) => void> = [];
 
-    this.router.get('/', checkUserPermissions, async (req: Request, res: Response) => {
+    if (!this.authMiddleware) {
+      return middlewares;
+    }
+
+    if (requireAuth) {
+      middlewares.push(this.authMiddleware.auth.isAuthenticated);
+    }
+
+    if (permissions.length > 0) {
+      middlewares.push((req: Request, res: Response, next: NextFunction) => {
+        return this.authMiddleware!.accessControl.checkUserPermissions(permissions, req, res, next);
+      });
+    }
+
+    if (checkOwnership) {
+      middlewares.push(this.authMiddleware.accessControl.restrictToOwner);
+    }
+
+    return middlewares;
+  }
+
+  public get(
+    path: string,
+    securityOptions: SecurityOptions = {},
+    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+  ) {
+    const middlewares = this.buildSecurityMiddleware(securityOptions);
+    this.router.get(path, ...middlewares, ...handlers);
+  }
+
+  public post(
+    path: string,
+    securityOptions: SecurityOptions = {},
+    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+  ) {
+    const middlewares = this.buildSecurityMiddleware(securityOptions);
+    this.router.post(path, ...middlewares, ...handlers);
+  }
+
+  public put(
+    path: string,
+    securityOptions: SecurityOptions = {},
+    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+  ) {
+    const middlewares = this.buildSecurityMiddleware(securityOptions);
+    this.router.put(path, ...middlewares, ...handlers);
+  }
+
+  public delete(
+    path: string,
+    securityOptions: SecurityOptions = {},
+    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+  ) {
+    const middlewares = this.buildSecurityMiddleware(securityOptions);
+    this.router.delete(path, ...middlewares, ...handlers);
+  }
+
+  public patch(
+    path: string,
+    securityOptions: SecurityOptions = {},
+    ...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>
+  ) {
+    const middlewares = this.buildSecurityMiddleware(securityOptions);
+    this.router.patch(path, ...middlewares, ...handlers);
+  }
+
+  protected autoWireSecure(
+    modelClass: typeof EnduranceSchema,
+    modelName: string,
+    securityOptions: SecurityOptions = {}
+  ) {
+    if (!this.authMiddleware) {
+      throw new Error('authMiddleware is required for autoWireSecure');
+    }
+
+    // GET /
+    this.get('/', securityOptions, async (req: Request, res: Response) => {
       try {
         const model = modelClass.getModel();
         const items = await model.find();
         res.json(items);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          res.status(500).json({ message: err.message });
+      } catch (err) {
+        if (this.authMiddleware) {
+          this.authMiddleware.auth.handleAuthError(err, req, res, () => { });
         } else {
-          res.status(500).json({ message: 'Unknown error' });
+          res.status(500).json({ message: 'Internal server error' });
         }
       }
     });
 
-    this.router.get('/:id', checkUserPermissions, restrictToOwner, getItem, (req: Request, res: Response) => {
-      res.json(res.locals.item);
-    });
-
-    this.router.post('/', checkUserPermissions, async (req: Request, res: Response) => {
-      const Model = modelClass.getModel();
-      const item = new Model(req.body);
+    // GET /:id
+    this.get('/:id', securityOptions, async (req: Request, res: Response) => {
       try {
-        const newItem = await item.save();
-        res.status(201).json(newItem);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          res.status(400).json({ message: err.message });
+        const model = modelClass.getModel();
+        const item = await model.findById(req.params.id);
+        if (!item) {
+          return res.status(404).json({ message: `${modelName} not found` });
+        }
+        res.json(item);
+      } catch (err) {
+        if (this.authMiddleware) {
+          this.authMiddleware.auth.handleAuthError(err, req, res, () => { });
         } else {
-          res.status(400).json({ message: 'Unknown error' });
+          res.status(500).json({ message: 'Internal server error' });
         }
       }
     });
 
-    this.router.patch('/:id', checkUserPermissions, restrictToOwner, getItem, async (req: Request, res: Response) => {
-      Object.assign(res.locals.item, req.body);
+    // POST /
+    this.post('/', securityOptions, async (req: Request, res: Response) => {
       try {
-        const updatedItem = await res.locals.item.save();
+        const model = modelClass.getModel();
+        const item = new model(req.body);
+        const savedItem = await item.save();
+        res.status(201).json(savedItem);
+      } catch (err) {
+        if (this.authMiddleware) {
+          this.authMiddleware.auth.handleAuthError(err, req, res, () => { });
+        } else {
+          res.status(500).json({ message: 'Internal server error' });
+        }
+      }
+    });
+
+    // PATCH /:id
+    this.patch('/:id', securityOptions, async (req: Request, res: Response) => {
+      try {
+        const model = modelClass.getModel();
+        const item = await model.findById(req.params.id);
+        if (!item) {
+          return res.status(404).json({ message: `${modelName} not found` });
+        }
+        Object.assign(item, req.body);
+        const updatedItem = await item.save();
         res.json(updatedItem);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          res.status(400).json({ message: err.message });
+      } catch (err) {
+        if (this.authMiddleware) {
+          this.authMiddleware.auth.handleAuthError(err, req, res, () => { });
         } else {
-          res.status(400).json({ message: 'Unknown error' });
+          res.status(500).json({ message: 'Internal server error' });
         }
       }
     });
 
-    this.router.delete('/:id', checkUserPermissions, restrictToOwner, getItem, async (req: Request, res: Response) => {
+    // DELETE /:id
+    this.delete('/:id', securityOptions, async (req: Request, res: Response) => {
       try {
-        await res.locals.item.remove();
-        res.json({ message: `${modelName} deleted` });
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          res.status(500).json({ message: err.message });
+        const model = modelClass.getModel();
+        const item = await model.findById(req.params.id);
+        if (!item) {
+          return res.status(404).json({ message: `${modelName} not found` });
+        }
+        await item.deleteOne();
+        res.json({ message: `${modelName} deleted successfully` });
+      } catch (err) {
+        if (this.authMiddleware) {
+          this.authMiddleware.auth.handleAuthError(err, req, res, () => { });
         } else {
-          res.status(500).json({ message: 'Unknown error' });
+          res.status(500).json({ message: 'Internal server error' });
         }
       }
     });
@@ -132,4 +198,4 @@ class EnduranceRouter {
   }
 }
 
-export { EnduranceRouter, Request, Response };
+export { EnduranceRouter, Request, Response, type SecurityOptions };
