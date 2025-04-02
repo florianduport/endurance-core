@@ -26,18 +26,20 @@ class EnduranceApp {
   constructor() {
     const __filename = fileURLToPath(import.meta.url);
     this.__dirname = path.dirname(__filename);
-
     this.app = express();
     this.port = process.env.SERVER_PORT || 3000; // Default port is 3000 if PORT env variable is not set
-    this.app.set('port', this.port);
 
-    this.setupMiddlewares();
-    this.setupCors();
-    this.setupLogging();
-    this.setupRoutes().then(() => {
-      this.setupErrorHandling();
-      this.setupDatabase();
-    });
+    const nodeModulesCount = (this.__dirname.match(/node_modules/g) || []).length;
+    if (nodeModulesCount === 1) {
+      this.app.set('port', this.port);
+      this.setupMiddlewares();
+      this.setupCors();
+      this.setupLogging();
+      this.setupRoutes().then(() => {
+        this.setupErrorHandling();
+        this.setupDatabase();
+      });
+    }
   }
 
   private setupMiddlewares() {
@@ -181,11 +183,8 @@ class EnduranceApp {
               if (isDirectory(filePath)) {
                 await readModulesFolder(filePath, overridePath);
               } else {
-                if (overridePath && overridePath !== '') {
-                  const overrideFilePath = path.join(overridePath, file);
-                  if (fs.existsSync(overrideFilePath)) {
-                    await processFile(overridePath, file);
-                  }
+                if (overridePath && overridePath !== '' && fs.existsSync(path.join(overridePath, file))) {
+                  await processFile(overridePath, file);
                 } else {
                   await processFile(folderPath, file);
                 }
@@ -211,8 +210,20 @@ class EnduranceApp {
               const modulePath = path.join(nodeModulesPath, moduleName);
               const localModulePath = path.join(localModulesPath, moduleName);
 
-              if (isDirectory(modulePath)) {
+              // Vérifier d'abord le nouveau chemin avec dist
+              const distModulePath = path.join(modulePath, 'dist');
+
+              if (isDirectory(distModulePath)) {
                 try {
+                  console.log('Loading from dist directory:', distModulePath);
+                  await readModulesFolder(distModulePath, localModulePath);
+                } catch (err) {
+                  console.error(`Error reading module dist folder ${distModulePath}:`, err);
+                }
+              } else if (isDirectory(modulePath)) {
+                // Fallback sur l'ancien chemin pour la rétrocompatibilité
+                try {
+                  console.log('Loading from standard directory:', modulePath);
                   await readModulesFolder(modulePath, localModulePath);
                 } catch (err) {
                   console.error(`Error reading module folder ${modulePath}:`, err);
