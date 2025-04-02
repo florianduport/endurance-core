@@ -1,28 +1,30 @@
-import { getModelForClass, pre, prop, ReturnModelType, Ref, DocumentType } from '@typegoose/typegoose';
+import * as enduranceModelType from '@typegoose/typegoose';
+import { Types } from 'mongoose';
 import { enduranceEmitter } from './emitter.js';
 
-@pre('save', function (this: any) {
+const EnduranceModelType = {
+    ...enduranceModelType,
+    Types
+};
+
+@EnduranceModelType.pre('save', function (this: any) {
     enduranceEmitter.emit(`${this.constructor.name}:preSave`, this);
 })
-export abstract class EnduranceSchema {
-    @prop({ default: () => new Date() })
-    public createdAt!: Date;
 
-    @prop({ default: () => new Date() })
-    public updatedAt!: Date;
+@EnduranceModelType.modelOptions({ schemaOptions: { timestamps: true } })
+
+export abstract class EnduranceSchema {
+    @EnduranceModelType.prop({ type: () => EnduranceModelType.Types.ObjectId, auto: true })
+    public _id!: Types.ObjectId;
 
     private static _model: any;
 
-    preSave(): void {
-        enduranceEmitter.emit(`${this.constructor.name}:preSave`, this);
-    }
-
     static getModel() {
         if (!this._model) {
-            this._model = getModelForClass(this as any);
+            this._model = EnduranceModelType.getModelForClass(this as any);
         }
         return this._model;
     }
 }
 
-export { prop, pre, ReturnModelType, Ref, getModelForClass, DocumentType };
+export { EnduranceModelType };
