@@ -15,7 +15,6 @@ import rfs from 'rotating-file-stream';
 import { enduranceEmitter, enduranceEventTypes } from './emitter.js';
 import { enduranceSwagger } from './swagger.js';
 import { fileURLToPath } from 'url';
-import { prop, getModelForClass, modelOptions, Ref } from '@typegoose/typegoose';
 
 class EnduranceApp {
   public app: express.Application;
