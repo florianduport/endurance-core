@@ -10,7 +10,11 @@ type SecurityOptions = {
 
 type RequestHandler = (req: Request, res: Response, next: NextFunction) => void | Promise<void>;
 
-abstract class EnduranceRouter {
+interface EnduranceRequest<T = any> extends Request {
+  user?: T;
+}
+
+abstract class EnduranceRouter<T = any> {
   protected router: Router;
   protected authMiddleware?: EnduranceAuthMiddleware;
 
@@ -55,12 +59,12 @@ abstract class EnduranceRouter {
   public get(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<RequestHandler>
+    ...handlers: Array<(req: EnduranceRequest<T>, res: Response, next: NextFunction) => Promise<void>>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
       try {
-        await handler(req, res, next);
+        await handler(req as EnduranceRequest<T>, res, next);
       } catch (error) {
         next(error);
       }
@@ -71,12 +75,12 @@ abstract class EnduranceRouter {
   public post(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<RequestHandler>
+    ...handlers: Array<(req: EnduranceRequest<T>, res: Response, next: NextFunction) => Promise<void>>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
       try {
-        await handler(req, res, next);
+        await handler(req as EnduranceRequest<T>, res, next);
       } catch (error) {
         next(error);
       }
@@ -87,12 +91,12 @@ abstract class EnduranceRouter {
   public put(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<RequestHandler>
+    ...handlers: Array<(req: EnduranceRequest<T>, res: Response, next: NextFunction) => Promise<void>>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
       try {
-        await handler(req, res, next);
+        await handler(req as EnduranceRequest<T>, res, next);
       } catch (error) {
         next(error);
       }
@@ -103,12 +107,12 @@ abstract class EnduranceRouter {
   public delete(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<RequestHandler>
+    ...handlers: Array<(req: EnduranceRequest<T>, res: Response, next: NextFunction) => Promise<void>>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
       try {
-        await handler(req, res, next);
+        await handler(req as EnduranceRequest<T>, res, next);
       } catch (error) {
         next(error);
       }
@@ -119,12 +123,12 @@ abstract class EnduranceRouter {
   public patch(
     path: string,
     securityOptions: SecurityOptions = {},
-    ...handlers: Array<RequestHandler>
+    ...handlers: Array<(req: EnduranceRequest<T>, res: Response, next: NextFunction) => Promise<void>>
   ) {
     const middlewares = this.buildSecurityMiddleware(securityOptions);
     const wrappedHandlers = handlers.map(handler => async (req: Request, res: Response, next: NextFunction) => {
       try {
-        await handler(req, res, next);
+        await handler(req as EnduranceRequest<T>, res, next);
       } catch (error) {
         next(error);
       }
@@ -238,4 +242,10 @@ abstract class EnduranceRouter {
   }
 }
 
-export { EnduranceRouter, Request, Response, NextFunction, type SecurityOptions };
+export {
+  EnduranceRouter,
+  EnduranceRequest,
+  Response,
+  NextFunction,
+  type SecurityOptions
+};
