@@ -1,30 +1,41 @@
-import * as enduranceModelType from '@typegoose/typegoose';
-import { Types } from 'mongoose';
+import * as Typegoose from '@typegoose/typegoose';
 import { enduranceEmitter } from './emitter.js';
 
-const EnduranceModelType = {
-    ...enduranceModelType,
-    Types
+export type EnduranceDocumentType<T> = Typegoose.DocumentType<T>;
+
+export const EnduranceModelType = {
+    prop: Typegoose.prop,
+    pre: Typegoose.pre,
+    post: Typegoose.post,
+    modelOptions: Typegoose.modelOptions,
+    getModelForClass: Typegoose.getModelForClass,
+    Severity: Typegoose.Severity,
+    defaultClasses: Typegoose.defaultClasses,
+    plugin: Typegoose.plugin,
+    index: Typegoose.index,
+    types: Typegoose.types
 };
 
 @EnduranceModelType.pre('save', function (this: any) {
     enduranceEmitter.emit(`${this.constructor.name}:preSave`, this);
 })
-
 @EnduranceModelType.modelOptions({ schemaOptions: { timestamps: true } })
-
 export abstract class EnduranceSchema {
-    @EnduranceModelType.prop({ type: () => EnduranceModelType.Types.ObjectId, auto: true })
-    public _id!: Types.ObjectId;
-
     private static _model: any;
 
-    static getModel() {
+    public static getModel(): any {
         if (!this._model) {
-            this._model = EnduranceModelType.getModelForClass(this as any);
+            this._model = Typegoose.getModelForClass(this as any);
         }
         return this._model;
     }
+
+    // Injectées dynamiquement par Typegoose/Mongoose
+    public save!: () => Promise<this>;
+    public populate!: (...args: any[]) => any;
+    public updateOne!: (...args: any[]) => any;
+    public remove!: (...args: any[]) => any;
 }
 
-export { EnduranceModelType };
+export type EnduranceModel<T extends new (...args: any[]) => any> =
+    ReturnType<typeof Typegoose.getModelForClass<T>>;
