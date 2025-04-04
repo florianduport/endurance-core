@@ -22,6 +22,7 @@ class EnduranceApp {
   private loggerWinston: winston.Logger = winston.createLogger();
   private swaggerApiFiles: string[] = [];
   private __dirname: string;
+  private isDirectUsage: boolean = false;
 
   constructor() {
     const __filename = fileURLToPath(import.meta.url);
@@ -29,17 +30,19 @@ class EnduranceApp {
     this.app = express();
     this.port = process.env.SERVER_PORT || 3000; // Default port is 3000 if PORT env variable is not set
 
+    // Vérifier si le module est utilisé directement (au premier niveau de node_modules)
     const nodeModulesCount = (this.__dirname.match(/node_modules/g) || []).length;
-    if (nodeModulesCount === 1) {
-      this.app.set('port', this.port);
-      this.setupMiddlewares();
-      this.setupCors();
-      this.setupLogging();
-      this.setupRoutes().then(() => {
-        this.setupErrorHandling();
-        this.setupDatabase();
-      });
-    }
+    this.isDirectUsage = nodeModulesCount === 1;
+
+    // Initialiser l'application Express dans tous les cas
+    this.app.set('port', this.port);
+    this.setupMiddlewares();
+    this.setupCors();
+    this.setupLogging();
+    this.setupRoutes().then(() => {
+      this.setupErrorHandling();
+      this.setupDatabase();
+    });
   }
 
   private setupMiddlewares() {
@@ -331,7 +334,10 @@ class EnduranceApp {
 
         enduranceDatabase.connect()
           .then(() => {
-            this.startServer();
+            // Ne démarrer le serveur que si le module est utilisé directement
+            if (this.isDirectUsage) {
+              this.startServer();
+            }
           })
           .catch((err: Error) => {
             console.error('Error connecting to MongoDB', err);
@@ -346,7 +352,10 @@ class EnduranceApp {
           store: new session.MemoryStore()
         })
       );
-      this.startServer();
+      // Ne démarrer le serveur que si le module est utilisé directement
+      if (this.isDirectUsage) {
+        this.startServer();
+      }
     }
   }
 
