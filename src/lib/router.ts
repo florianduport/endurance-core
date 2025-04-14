@@ -40,7 +40,7 @@ abstract class EnduranceRouter<T = any> {
     }
 
     if (requireAuth) {
-      middlewares.push(this.authMiddleware.auth.isAuthenticated);
+      middlewares.push(this.authMiddleware!.auth.isAuthenticated());
     }
 
     if (permissions.length > 0) {

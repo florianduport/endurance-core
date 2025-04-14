@@ -33,9 +33,9 @@ abstract class EnduranceAuth {
   public generateAzureTokens = (...args: any[]): void => this.generateAzureTokens(...args);
   public refreshJwt = (...args: any[]): void => this.refreshJwt(...args);
   public revokeRefreshToken = (...args: any[]): void => this.revokeRefreshToken(...args);
-  public isAuthenticated = (...args: any[]): void => this.isAuthenticated(...args);
   public generateToken = (...args: any[]): void => this.generateToken(...args);
   public generateRefreshToken = (...args: any[]): string => this.generateRefreshToken(...args);
+  public isAuthenticated = (): ((req: Request, res: Response, next: NextFunction) => void) => this.isAuthenticated();
   public handleAuthError = (err: any, req: any, res: any, next: any): void => this.handleAuthError(err, req, res, next);
   public asyncHandler = (fn: (req: any, res: any, next: any) => Promise<void>) => (req: any, res: any, next: any): void => {
     Promise.resolve(fn(req, res, next)).catch(next);
