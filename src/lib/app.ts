@@ -46,7 +46,6 @@ class EnduranceApp {
   }
 
   private setupMiddlewares() {
-    this.app.use(logger('dev'));
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: false }));
     this.app.use(cookieParser());
@@ -74,54 +73,56 @@ class EnduranceApp {
   }
 
   private setupLogging() {
-    const logDirectory = path.join(this.__dirname, '../../../../logs');
-    if (!fs.existsSync(logDirectory)) {
-      try {
-        fs.mkdirSync(logDirectory);
-      } catch (err) {
-        console.error('Error creating log directory:', err);
-      }
-    }
-    const accessLogStream = rfs.createStream('access.log', {
-      interval: '1d', // rotate daily
-      path: logDirectory
-    });
-
-    const transports: winston.transport[] = [
-      new winston.transports.Console()
-    ];
-
-    if (process.env.LOGGER_DISTANT_ACTIVATED === 'true') {
-      transports.push(
-        new LokiTransport({
-          host: process.env.LOGGER_DISTANT_URL || '',
-          labels: { job: process.env.LOGGER_DISTANT_APP_NAME || 'nodejs_app' },
-          json: true,
-          onConnectionError: (err) => {
-            console.error('Connection error with Loki:', err);
-          }
-        })
-      );
-    }
-
-    this.loggerWinston = winston.createLogger({
-      level: 'info',
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.errors({ stack: true }),
-        winston.format.json()
-      ),
-      transports
-    });
-
-    this.app.use(logger('combined', {
-      stream: {
-        write: (message: string) => {
-          accessLogStream.write(message);
-          this.loggerWinston.info(message.trim());
+    if (process.env.LOGGER_LOCAL_ACTIVATED === 'true') {
+      const logDirectory = path.join(this.__dirname, '../../../../logs');
+      if (!fs.existsSync(logDirectory)) {
+        try {
+          fs.mkdirSync(logDirectory);
+        } catch (err) {
+          console.error('Error creating log directory:', err);
         }
       }
-    }));
+      const accessLogStream = rfs.createStream('access.log', {
+        interval: '1d', // rotate daily
+        path: logDirectory
+      });
+
+      if (process.env.LOGGER_DISTANT_ACTIVATED === 'true') {
+        const transports: winston.transport[] = [
+          new winston.transports.Console()
+        ];
+
+        transports.push(
+          new LokiTransport({
+            host: process.env.LOGGER_DISTANT_URL || '',
+            labels: { job: process.env.LOGGER_DISTANT_APP_NAME || 'nodejs_app' },
+            json: true,
+            onConnectionError: (err) => {
+              console.error('Connection error with Loki:', err);
+            }
+          })
+        );
+
+        this.loggerWinston = winston.createLogger({
+          level: 'info',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.errors({ stack: true }),
+            winston.format.json()
+          ),
+          transports
+        });
+
+        this.app.use(logger('combined', {
+          stream: {
+            write: (message: string) => {
+              accessLogStream.write(message);
+              this.loggerWinston.info(message.trim());
+            }
+          }
+        }));
+      }
+    }
   }
 
   private async setupRoutes() {
