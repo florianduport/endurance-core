@@ -74,7 +74,7 @@ class EnduranceApp {
   }
 
   private setupLogging() {
-    const logDirectory = path.join(this.__dirname, '../../../logs');
+    const logDirectory = path.join(this.__dirname, '../../../../logs');
     if (!fs.existsSync(logDirectory)) {
       try {
         fs.mkdirSync(logDirectory);
