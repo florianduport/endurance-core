@@ -1,7 +1,10 @@
 import * as Typegoose from '@typegoose/typegoose';
+import { Types } from 'mongoose';
 import { enduranceEmitter } from './emitter.js';
 
 export type EnduranceDocumentType<T> = Typegoose.DocumentType<T>;
+export type ObjectId = Types.ObjectId;
+export type Ref<T> = Typegoose.Ref<T>;
 
 export const EnduranceModelType = {
     prop: Typegoose.prop,
