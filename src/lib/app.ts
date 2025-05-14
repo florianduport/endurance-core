@@ -46,8 +46,9 @@ class EnduranceApp {
   }
 
   private setupMiddlewares() {
-    this.app.use(express.json());
-    this.app.use(express.urlencoded({ extended: false }));
+    const payloadLimit = process.env.REQUEST_PAYLOAD_LIMIT || '50mb';
+    this.app.use(express.json({ limit: payloadLimit }));
+    this.app.use(express.urlencoded({ extended: false, limit: payloadLimit }));
     this.app.use(cookieParser());
     this.app.use(compression());
   }
