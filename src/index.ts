@@ -1,7 +1,7 @@
 export { default as app } from './lib/app.js';
 export { EnduranceAuthMiddleware, EnduranceAccessControl, EnduranceAuth } from './lib/auth.js';
 export { EnduranceSchema, EnduranceModel, EnduranceDocumentType, EnduranceModelType, ObjectId, Ref } from './lib/schema.js';
-export { EnduranceRouter, EnduranceRequest, Response, NextFunction, SecurityOptions } from './lib/router.js';
+export { EnduranceRouter, EnduranceRequest, Response, NextFunction, SecurityOptions, FileUploadConfig } from './lib/router.js';
 export { enduranceConsumer } from './lib/consumer.js';
 export { enduranceCron } from './lib/cron.js';
 export { enduranceDatabase } from './lib/database.js';

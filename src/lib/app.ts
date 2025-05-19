@@ -12,6 +12,7 @@ import LokiTransport from 'winston-loki';
 import fs from 'fs';
 import compression from 'compression';
 import rfs from 'rotating-file-stream';
+import multer from 'multer';
 import { enduranceEmitter, enduranceEventTypes } from './emitter.js';
 import { enduranceSwagger } from './swagger.js';
 import { fileURLToPath } from 'url';
@@ -23,12 +24,48 @@ class EnduranceApp {
   private swaggerApiFiles: string[] = [];
   private __dirname: string;
   private isDirectUsage: boolean = false;
+  private upload: multer.Multer;
 
   constructor() {
     const __filename = fileURLToPath(import.meta.url);
     this.__dirname = path.dirname(__filename);
     this.app = express();
     this.port = process.env.SERVER_PORT || 3000; // Default port is 3000 if PORT env variable is not set
+
+    // Configuration de multer pour les uploads de fichiers
+    const storage = multer.diskStorage({
+      destination: (req: Request, file: any, cb: (error: Error | null, destination: string) => void) => {
+        // Trouver le chemin du projet parent (celui qui utilise endurance-core)
+        const nodeModulesPath = this.__dirname.split('node_modules')[0];
+        const projectRoot = path.dirname(nodeModulesPath);
+        const uploadDir = path.join(projectRoot, 'uploads');
+
+        // Créer le dossier s'il n'existe pas
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        console.log('Upload directory:', uploadDir);
+        cb(null, uploadDir);
+      },
+      filename: (req: Request, file: any, cb: (error: Error | null, filename: string) => void) => {
+        // Garder le nom original du fichier
+        const originalName = path.parse(file.originalname).name;
+        const ext = path.extname(file.originalname);
+        // Ajouter un suffixe unique à la fin
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = `${originalName}-${uniqueSuffix}${ext}`;
+        console.log('Saving file:', filename);
+        cb(null, filename);
+      }
+    });
+
+    this.upload = multer({
+      storage,
+      limits: {
+        fileSize: parseInt(process.env.MAX_FILE_SIZE || '5242880') // 5MB par défaut
+      }
+    });
 
     // Vérifier si le module est utilisé directement (au premier niveau de node_modules)
     const nodeModulesCount = (this.__dirname.match(/node_modules/g) || []).length;
@@ -47,7 +84,17 @@ class EnduranceApp {
 
   private setupMiddlewares() {
     const payloadLimit = process.env.REQUEST_PAYLOAD_LIMIT || '50mb';
-    this.app.use(express.json({ limit: payloadLimit }));
+
+    // Middleware pour gérer différemment les requêtes multipart/form-data et JSON
+    this.app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.headers['content-type']?.includes('multipart/form-data')) {
+        next();
+      } else {
+        express.json({ limit: payloadLimit })(req, res, next);
+      }
+    });
+
+    // On garde les autres middlewares
     this.app.use(express.urlencoded({ extended: false, limit: payloadLimit }));
     this.app.use(cookieParser());
     this.app.use(compression());
@@ -376,6 +423,11 @@ class EnduranceApp {
       console.log(`Server listening on port ${this.port}`);
       enduranceEmitter.emit(enduranceEventTypes.APP_STARTED);
     });
+  }
+
+  // Méthode publique pour accéder à l'instance de multer
+  public getUpload() {
+    return this.upload;
   }
 }
 
