@@ -1,6 +1,6 @@
 import cron from 'node-cron';
-import { emitter } from '../src/lib/emitter';
-import { loadCronJob } from '../src/lib/cron';
+import { emitter } from '../src/core/emitter';
+import { loadCronJob } from '../src/infra/cron';
 import { jest } from '@jest/globals'
 
 jest.mock('node-cron', () => {
@@ -12,7 +12,7 @@ jest.mock('node-cron', () => {
     };
 });
 
-jest.mock('../src/lib/emitter', () => ({
+jest.mock('../src/core/emitter', () => ({
     emitter: {
         emit: jest.fn(),
     },

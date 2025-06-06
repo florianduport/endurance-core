@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from '../src/lib/app';
+import app from '../src/internal/app';
 
 describe('Test Express App', () => {
     it('should respond with 404 for unknown routes', async () => {
