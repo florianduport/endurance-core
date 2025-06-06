@@ -9,7 +9,8 @@
     "dev": "ts-node ./src/internal/app.ts",
     "lint": "eslint '**/*.{ts,tsx}'",
     "build": "eslint '**/*.{ts,tsx}' --ignore-pattern '**/__tests__/**' && tsc && tsc-alias",
-    "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage"
   },
   "repository": {
     "type": "git",
