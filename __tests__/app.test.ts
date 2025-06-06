@@ -7,7 +7,6 @@ describe('Test Express App', () => {
         expect(response.status).toBe(404);
     });
 
-
     it('should handle errors gracefully', async () => {
         const response = await request(app).get('/cause-error');
         expect(response.status).toBe(500);

@@ -7,13 +7,13 @@ const mockEmit = jest.fn();
 
 jest.unstable_mockModule('node-cron', () => ({
   validate: mockValidate,
-  schedule: mockSchedule,
+  schedule: mockSchedule
 }));
 
 jest.unstable_mockModule('../src/core/emitter', () => ({
   enduranceEmitter: {
-    emit: mockEmit,
-  },
+    emit: mockEmit
+  }
 }));
 
 const cronModule = await import('../src/infra/cron');
@@ -22,9 +22,8 @@ const enduranceCron = cronModule.enduranceCron;
 const mockScheduledTask = {
   start: jest.fn(),
   stop: jest.fn(),
-  now: jest.fn(),
+  now: jest.fn()
 } as unknown as ScheduledTask;
-
 
 describe('EnduranceCron', () => {
     beforeEach(() => {

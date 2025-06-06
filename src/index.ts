@@ -3,7 +3,7 @@ export { default as app } from './internal/app';
 export {
   EnduranceAuthMiddleware,
   EnduranceAccessControl,
-  EnduranceAuth,
+  EnduranceAuth
 } from './core/auth';
 
 export {
@@ -12,7 +12,7 @@ export {
   EnduranceDocumentType,
   EnduranceModelType,
   ObjectId,
-  Ref,
+  Ref
 } from './core/schema';
 
 export {
@@ -21,7 +21,7 @@ export {
   Response,
   NextFunction,
   SecurityOptions,
-  FileUploadConfig,
+  FileUploadConfig
 } from './core/router';
 
 export { enduranceConsumer } from './core/consumer';
