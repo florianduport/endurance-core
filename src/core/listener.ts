@@ -1,4 +1,4 @@
-import { enduranceEmitter } from './emitter';
+import { enduranceEmitter } from './emitter.js';
 
 type EventCallback = (...args: unknown[]) => void;
 

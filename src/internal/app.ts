@@ -13,8 +13,8 @@ import fs from 'fs';
 import compression from 'compression';
 import rfs from 'rotating-file-stream';
 import multer from 'multer';
-import { enduranceEmitter, enduranceEventTypes } from '../core/emitter';
-import { enduranceSwagger } from '../infra/swagger';
+import { enduranceEmitter, enduranceEventTypes } from '../core/emitter.js';
+import { enduranceSwagger } from '../infra/swagger.js';
 import { fileURLToPath } from 'url';
 
 class EnduranceApp {

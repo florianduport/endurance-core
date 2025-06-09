@@ -1,6 +1,6 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
-import { EnduranceSchema } from './schema';
-import { EnduranceAuthMiddleware } from './auth';
+import { EnduranceSchema } from './schema.js';
+import { EnduranceAuthMiddleware } from './auth.js';
 import multer from 'multer';
 import type { Express } from 'express';
 import path from 'path';

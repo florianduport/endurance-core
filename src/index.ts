@@ -1,10 +1,10 @@
-export { default as app } from './internal/app';
+export { default as app } from './internal/app.js';
 
 export {
   EnduranceAuthMiddleware,
   EnduranceAccessControl,
   EnduranceAuth
-} from './core/auth';
+} from './core/auth.js';
 
 export {
   EnduranceSchema,
@@ -13,7 +13,7 @@ export {
   EnduranceModelType,
   ObjectId,
   Ref
-} from './core/schema';
+} from './core/schema.js';
 
 export {
   EnduranceRouter,
@@ -22,12 +22,12 @@ export {
   NextFunction,
   SecurityOptions,
   FileUploadConfig
-} from './core/router';
+} from './core/router.js';
 
-export { enduranceConsumer } from './core/consumer';
-export { enduranceEmitter, enduranceEventTypes } from './core/emitter';
-export { enduranceListener } from './core/listener';
-export { enduranceNotificationManager } from './core/notification';
-export { enduranceCron } from './infra/cron';
-export { enduranceDatabase } from './infra/database';
-export { enduranceSwagger } from './infra/swagger';
+export { enduranceConsumer } from './core/consumer.js';
+export { enduranceEmitter, enduranceEventTypes } from './core/emitter.js';
+export { enduranceListener } from './core/listener.js';
+export { enduranceNotificationManager } from './core/notification.js';
+export { enduranceCron } from './infra/cron.js';
+export { enduranceDatabase } from './infra/database.js';
+export { enduranceSwagger } from './infra/swagger.js';
