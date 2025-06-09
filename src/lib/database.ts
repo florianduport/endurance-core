@@ -21,14 +21,6 @@ class EnduranceDatabase {
   }
 
   private getDbConnectionString() {
-    if (process.env.PLATFORM_RELATIONSHIPS) {
-      const relationship = process.env.PLATFORM_RELATIONSHIPS;
-      console.log("j ai la variable d'environnement", relationship);
-
-      const relationships = JSON.parse(relationship);
-      return relationships.mongo[0].uri;
-    }
-
     const requiredEnvVars = [
       "MONGODB_USERNAME",
       "MONGODB_PASSWORD",
@@ -38,13 +30,21 @@ class EnduranceDatabase {
     for (const envVar of requiredEnvVars) {
       if (!process.env[envVar]) throw new Error(`${envVar} not set`);
     }
+
     const {
       MONGODB_USERNAME,
       MONGODB_PASSWORD,
       MONGODB_HOST,
       MONGODB_DATABASE,
     } = process.env;
-    return `mongodb+srv://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
+
+    const MONGODB_PORT = process.env.MONGODB_PORT || "27017";
+    const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || "mongodb+srv";
+
+    const portPart =
+      MONGODB_PROTOCOL === "mongodb+srv" ? "" : `:${MONGODB_PORT}`;
+
+    return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}${portPart}/${MONGODB_DATABASE}`;
   }
 
   public connect(): Promise<typeof mongoose> {
