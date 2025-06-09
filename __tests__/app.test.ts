@@ -1,12 +1,11 @@
 import request from 'supertest';
-import app from '../src/lib/app';
+import app from '../src/internal/app';
 
 describe('Test Express App', () => {
     it('should respond with 404 for unknown routes', async () => {
         const response = await request(app).get('/unknown-route');
         expect(response.status).toBe(404);
     });
-
 
     it('should handle errors gracefully', async () => {
         const response = await request(app).get('/cause-error');
