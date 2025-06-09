@@ -19,6 +19,7 @@
       "double",
       { "avoidEscape": true, "allowTemplateLiterals": true }
     ],
+    "comma-dangle": ["warn", "only-multiline"],
     "@typescript-eslint/ban-ts-comment": [
       "error",
       {
