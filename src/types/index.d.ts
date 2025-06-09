@@ -1,11 +1,11 @@
 declare module 'endurance-core' {
-    export { app } from './internal/app';
+    export { app } from './internal/app.js';
 
     export {
         EnduranceAuthMiddleware,
         EnduranceAccessControl,
         EnduranceAuth
-    } from './core/auth';
+    } from './core/auth.js';
 
     export {
         EnduranceSchema,
@@ -14,7 +14,7 @@ declare module 'endurance-core' {
         EnduranceModelType,
         ObjectId,
         Ref
-    } from './core/schema';
+    } from './core/schema.js';
 
     export {
         EnduranceRouter,
@@ -23,20 +23,20 @@ declare module 'endurance-core' {
         NextFunction,
         SecurityOptions,
         FileUploadConfig
-    } from './core/router';
+    } from './core/router.js';
 
-    export { enduranceConsumer } from './core/consumer';
+    export { enduranceConsumer } from './core/consumer.js';
 
-    export { enduranceCron } from './infra/cron';
-    export { enduranceDatabase } from './infra/database';
-    export { enduranceSwagger } from './infra/swagger';
+    export { enduranceCron } from './infra/cron.js';
+    export { enduranceDatabase } from './infra/database.js';
+    export { enduranceSwagger } from './infra/swagger.js';
 
     export {
         enduranceEmitter,
         enduranceEventTypes
-    } from './core/emitter';
+    } from './core/emitter.js';
 
-    export { enduranceListener } from './core/listener';
+    export { enduranceListener } from './core/listener.js';
 
-    export { enduranceNotificationManager } from './core/notification';
+    export { enduranceNotificationManager } from './core/notification.js';
 }
