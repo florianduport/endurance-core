@@ -13,8 +13,8 @@ import fs from 'fs';
 import compression from 'compression';
 import rfs from 'rotating-file-stream';
 import multer from 'multer';
-import { enduranceEmitter, enduranceEventTypes } from './emitter.js';
-import { enduranceSwagger } from './swagger.js';
+import { enduranceEmitter, enduranceEventTypes } from '../core/emitter.js';
+import { enduranceSwagger } from '../infra/swagger.js';
 import { fileURLToPath } from 'url';
 
 class EnduranceApp {
@@ -371,7 +371,7 @@ class EnduranceApp {
 
   private setupDatabase() {
     if (process.env.MONGODB_HOST) {
-      import('./database.js').then(({ enduranceDatabase }) => {
+      import('../infra/database.js').then(({ enduranceDatabase }) => {
         this.app.use(
           session({
             secret: process.env.SESSION_SECRET || 'endurance',

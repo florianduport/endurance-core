@@ -1,55 +1,74 @@
-import cron from 'node-cron';
-import { emitter } from '../src/lib/emitter';
-import { loadCronJob } from '../src/lib/cron';
-import { jest } from '@jest/globals'
+import { jest } from '@jest/globals';
+import type { ScheduledTask } from 'node-cron';
 
-jest.mock('node-cron', () => {
-    const originalModule = jest.requireActual<typeof cron>('node-cron');
-    return {
-        ...originalModule,
-        schedule: jest.fn(),
-        validate: jest.fn(),
-    };
-});
+const mockValidate = jest.fn();
+const mockSchedule = jest.fn();
+const mockEmit = jest.fn();
 
-jest.mock('../src/lib/emitter', () => ({
-    emitter: {
-        emit: jest.fn(),
-    },
+jest.unstable_mockModule('node-cron', () => ({
+  validate: mockValidate,
+  schedule: mockSchedule
 }));
 
-describe('loadCronJob', () => {
+jest.unstable_mockModule('../src/core/emitter', () => ({
+  enduranceEmitter: {
+    emit: mockEmit
+  }
+}));
+
+const cronModule = await import('../src/infra/cron');
+const enduranceCron = cronModule.enduranceCron;
+
+const mockScheduledTask = {
+  start: jest.fn(),
+  stop: jest.fn(),
+  now: jest.fn()
+} as unknown as ScheduledTask;
+
+describe('EnduranceCron', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    it('should throw an error if cron time format is invalid', () => {
-        (cron.validate as jest.Mock).mockReturnValue(false);
-
-        expect(() => loadCronJob('testJob', 'invalid-cron-time', jest.fn<() => Promise<void>>().mockResolvedValue())).toThrow('Invalid cron time format');
+    it('should throw on invalid cron', () => {
+        mockValidate.mockReturnValue(false);
+        expect(() =>
+            enduranceCron.loadCronJob('fail', 'bad', async () => { })
+        ).toThrow('Invalid cron time format');
     });
 
-    it('should schedule a cron job if cron time format is valid', () => {
-        (cron.validate as jest.Mock).mockReturnValue(true);
-        const taskFunction = jest.fn<() => Promise<void>>().mockResolvedValue();
+    it('should run and emit events', async () => {
+        mockValidate.mockReturnValue(true);
+        let capturedFn: () => Promise<void> = async () => { };
 
-        loadCronJob('testJob', '* * * * *', taskFunction);
+        mockSchedule.mockImplementation((_, fn) => {
+            capturedFn = fn as () => Promise<void>;
+            return mockScheduledTask;
+        });
 
-        expect(cron.schedule).toHaveBeenCalledWith('* * * * *', expect.any(Function));
+        const job = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+        enduranceCron.loadCronJob('run', '* * * * *', job);
+        await capturedFn();
+
+        expect(mockEmit).toHaveBeenCalledWith('RUN_CRONSTART');
+        expect(job).toHaveBeenCalled();
+        expect(mockEmit).toHaveBeenCalledWith('RUN_CRONEND');
     });
 
-    it('should emit events before and after the task function is executed', async () => {
-        (cron.validate as jest.Mock).mockReturnValue(true);
-        const taskFunction = jest.fn<() => Promise<void>>();
+    it('should handle error in job and still emit end', async () => {
+        mockValidate.mockReturnValue(true);
+        let capturedFn: () => Promise<void> = async () => { };
 
-        loadCronJob('testJob', '* * * * *', taskFunction);
+        mockSchedule.mockImplementation((_, fn) => {
+            capturedFn = fn as () => Promise<void>;
+            return mockScheduledTask;
+        });
 
-        const scheduledFunction = (cron.schedule as jest.Mock).mock.calls[0][1] as () => Promise<void>;
+        const job = jest.fn<() => Promise<void>>().mockRejectedValue(new Error('Fail'));
+        enduranceCron.loadCronJob('failjob', '* * * * *', job);
+        await capturedFn();
 
-        await scheduledFunction();
-
-        expect(emitter.emit).toHaveBeenCalledWith('TESTJOB_CRONSTART');
-        expect(taskFunction).toHaveBeenCalled();
-        expect(emitter.emit).toHaveBeenCalledWith('TESTJOB_CRONEND');
+        expect(mockEmit).toHaveBeenCalledWith('FAILJOB_CRONSTART');
+        expect(mockEmit).toHaveBeenCalledWith('FAILJOB_CRONEND');
     });
 });

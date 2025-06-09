@@ -1,5 +1,5 @@
-import { createConsumer as createAmqpConsumer } from './consumers/amqp.consumer.js';
-import { createConsumer as createKafkaConsumer } from './consumers/kafka.consumer.js';
+import { createConsumer as createAmqpConsumer } from '../consumers/amqp.consumer.js';
+import { createConsumer as createKafkaConsumer } from '../consumers/kafka.consumer.js';
 
 type ConsumerType = 'amqp' | 'kafka';
 
