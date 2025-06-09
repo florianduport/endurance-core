@@ -21,30 +21,50 @@ class EnduranceDatabase {
   }
 
   private getDbConnectionString() {
+    // ATLAS Cloud variables
+    if (
+      process.env.MONGODB_HOST &&
+      process.env.MONGODB_HOST.includes(".mongodb.net")
+    ) {
+      const requiredEnvVars = [
+        "MONGODB_USERNAME",
+        "MONGODB_PASSWORD",
+        "MONGODB_HOST",
+        "MONGODB_DATABASE",
+      ];
+      for (const envVar of requiredEnvVars) {
+        if (!process.env[envVar]) throw new Error(`${envVar} not set`);
+      }
+      const {
+        MONGODB_USERNAME,
+        MONGODB_PASSWORD,
+        MONGODB_HOST,
+        MONGODB_DATABASE,
+      } = process.env;
+      const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || "mongodb+srv";
+      return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
+    }
+
+    // Otherwise, fallback on internal mongo (DBMONGO_)
     const requiredEnvVars = [
-      "MONGODB_USERNAME",
-      "MONGODB_PASSWORD",
-      "MONGODB_HOST",
-      "MONGODB_DATABASE",
+      "DBMONGO_USERNAME",
+      "DBMONGO_PASSWORD",
+      "DBMONGO_HOSTNAME",
+      "DBMONGO_PATH",
+      "DBMONGO_PORT",
     ];
     for (const envVar of requiredEnvVars) {
       if (!process.env[envVar]) throw new Error(`${envVar} not set`);
     }
-
     const {
-      MONGODB_USERNAME,
-      MONGODB_PASSWORD,
-      MONGODB_HOST,
-      MONGODB_DATABASE,
+      DBMONGO_USERNAME,
+      DBMONGO_PASSWORD,
+      DBMONGO_HOSTNAME,
+      DBMONGO_PATH,
+      DBMONGO_PORT,
     } = process.env;
-
-    const MONGODB_PORT = process.env.MONGODB_PORT || "27017";
-    const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || "mongodb+srv";
-
-    const portPart =
-      MONGODB_PROTOCOL === "mongodb+srv" ? "" : `:${MONGODB_PORT}`;
-
-    return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}${portPart}/${MONGODB_DATABASE}`;
+    const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || "mongodb";
+    return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOSTNAME}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
   }
 
   public connect(): Promise<typeof mongoose> {
