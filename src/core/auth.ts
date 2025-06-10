@@ -1,45 +1,51 @@
 import { Request, Response, NextFunction } from 'express';
 
 abstract class EnduranceAccessControl {
-  public checkUserPermissions = (
+  abstract checkUserPermissions(
     permissions: string[],
     req: Request,
     res: Response,
     next: NextFunction
-  ): void => this.checkUserPermissions(permissions, req, res, next);
+  ): void;
 
-  public restrictToOwner = (
+  abstract restrictToOwner(
     req: Request,
     res: Response,
     next: NextFunction
-  ): void => this.restrictToOwner(req, res, next);
+  ): void;
 
-  public authorize = (...args: any[]): void => this.authorize(...args);
-  public isAuthenticated = (...args: any[]): void => this.isAuthenticated(...args);
-  public handleAuthError = (err: any, req: any, res: any, next: any): void => this.handleAuthError(err, req, res, next);
-  public asyncHandler = (fn: (req: any, res: any, next: any) => Promise<void>) => (req: any, res: any, next: any): void => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
+  abstract authorize(...args: any[]): void;
+  abstract isAuthenticated(...args: any[]): void;
+  abstract handleAuthError(err: any, req: any, res: any, next: any): void;
+
+  asyncHandler(fn: (req: any, res: any, next: any) => Promise<void>) {
+    return (req: any, res: any, next: any): void => {
+      Promise.resolve(fn(req, res, next)).catch(next);
+    };
+  }
 }
 
 abstract class EnduranceAuth {
-  public getUserById = (...args: any[]): void => this.getUserById(...args);
-  public validatePassword = (...args: any[]): void => this.validatePassword(...args);
-  public storeRefreshToken = (...args: any[]): void => this.storeRefreshToken(...args);
-  public getStoredRefreshToken = (...args: any[]): void => this.getStoredRefreshToken(...args);
-  public deleteStoredRefreshToken = (...args: any[]): void => this.deleteStoredRefreshToken(...args);
-  public authenticateLocalAndGenerateTokens = (...args: any[]): void => this.authenticateLocalAndGenerateTokens(...args);
-  public authenticateAzureAndGenerateTokens = (...args: any[]): void => this.authenticateAzureAndGenerateTokens(...args);
-  public generateAzureTokens = (...args: any[]): void => this.generateAzureTokens(...args);
-  public refreshJwt = (...args: any[]): void => this.refreshJwt(...args);
-  public revokeRefreshToken = (...args: any[]): void => this.revokeRefreshToken(...args);
-  public generateToken = (...args: any[]): void => this.generateToken(...args);
-  public generateRefreshToken = (...args: any[]): string => this.generateRefreshToken(...args);
-  public isAuthenticated = (): ((req: Request, res: Response, next: NextFunction) => void) => this.isAuthenticated();
-  public handleAuthError = (err: any, req: any, res: any, next: any): void => this.handleAuthError(err, req, res, next);
-  public asyncHandler = (fn: (req: any, res: any, next: any) => Promise<void>) => (req: any, res: any, next: any): void => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
+  abstract getUserById(...args: any[]): void;
+  abstract validatePassword(...args: any[]): void;
+  abstract storeRefreshToken(...args: any[]): void;
+  abstract getStoredRefreshToken(...args: any[]): void;
+  abstract deleteStoredRefreshToken(...args: any[]): void;
+  abstract authenticateLocalAndGenerateTokens(...args: any[]): void;
+  abstract authenticateAzureAndGenerateTokens(...args: any[]): void;
+  abstract generateAzureTokens(...args: any[]): void;
+  abstract refreshJwt(...args: any[]): void;
+  abstract revokeRefreshToken(...args: any[]): void;
+  abstract generateToken(...args: any[]): void;
+  abstract generateRefreshToken(...args: any[]): string;
+  abstract isAuthenticated(): (req: Request, res: Response, next: NextFunction) => void;
+  abstract handleAuthError(err: any, req: any, res: any, next: any): void;
+
+  asyncHandler(fn: (req: any, res: any, next: any) => Promise<void>) {
+    return (req: any, res: any, next: any): void => {
+      Promise.resolve(fn(req, res, next)).catch(next);
+    };
+  }
 }
 
 abstract class EnduranceAuthMiddleware {
