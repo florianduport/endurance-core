@@ -48,7 +48,7 @@ abstract class EnduranceAuth {
   }
 }
 
-abstract class EnduranceAuthMiddleware {
+class EnduranceAuthMiddleware {
   public accessControl: EnduranceAccessControl;
   public auth: EnduranceAuth;
   private static instance: any = null;
