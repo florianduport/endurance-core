@@ -1,15 +1,15 @@
-import mongoose, { ConnectOptions } from "mongoose";
-import session from "express-session";
-import connectMongoDBSession from "connect-mongodb-session";
+import mongoose, { ConnectOptions } from 'mongoose';
+import session from 'express-session';
+import connectMongoDBSession from 'connect-mongodb-session';
 
 const MongoDBStore = connectMongoDBSession(session);
 
 class EnduranceDatabase {
   private requiredEnvVars: string[] = [
-    "MONGODB_USERNAME",
-    "MONGODB_PASSWORD",
-    "MONGODB_HOST",
-    "MONGODB_DATABASE",
+    'MONGODB_USERNAME',
+    'MONGODB_PASSWORD',
+    'MONGODB_HOST',
+    'MONGODB_DATABASE'
   ];
 
   public checkRequiredEnvVars(): void {
@@ -24,13 +24,13 @@ class EnduranceDatabase {
     // ATLAS Cloud variables
     if (
       process.env.MONGODB_HOST &&
-      process.env.MONGODB_HOST.includes(".mongodb.net")
+      process.env.MONGODB_HOST.includes('.mongodb.net')
     ) {
       const requiredEnvVars = [
-        "MONGODB_USERNAME",
-        "MONGODB_PASSWORD",
-        "MONGODB_HOST",
-        "MONGODB_DATABASE",
+        'MONGODB_USERNAME',
+        'MONGODB_PASSWORD',
+        'MONGODB_HOST',
+        'MONGODB_DATABASE'
       ];
       for (const envVar of requiredEnvVars) {
         if (!process.env[envVar]) throw new Error(`${envVar} not set`);
@@ -39,19 +39,19 @@ class EnduranceDatabase {
         MONGODB_USERNAME,
         MONGODB_PASSWORD,
         MONGODB_HOST,
-        MONGODB_DATABASE,
+        MONGODB_DATABASE
       } = process.env;
-      const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || "mongodb+srv";
+      const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb+srv';
       return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
     }
 
     // Otherwise, fallback on internal mongo (DBMONGO_)
     const requiredEnvVars = [
-      "DBMONGO_USERNAME",
-      "DBMONGO_PASSWORD",
-      "DBMONGO_HOSTNAME",
-      "DBMONGO_PATH",
-      "DBMONGO_PORT",
+      'DBMONGO_USERNAME',
+      'DBMONGO_PASSWORD',
+      'DBMONGO_HOSTNAME',
+      'DBMONGO_PATH',
+      'DBMONGO_PORT'
     ];
     for (const envVar of requiredEnvVars) {
       if (!process.env[envVar]) throw new Error(`${envVar} not set`);
@@ -61,9 +61,9 @@ class EnduranceDatabase {
       DBMONGO_PASSWORD,
       DBMONGO_HOSTNAME,
       DBMONGO_PATH,
-      DBMONGO_PORT,
+      DBMONGO_PORT
     } = process.env;
-    const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || "mongodb";
+    const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb';
     return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOSTNAME}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
   }
 
@@ -71,7 +71,7 @@ class EnduranceDatabase {
     const connectionString = this.getDbConnectionString();
 
     return mongoose.connect(connectionString, {
-      connectTimeoutMS: 30000,
+      connectTimeoutMS: 30000
     } as ConnectOptions);
   }
 
@@ -80,11 +80,11 @@ class EnduranceDatabase {
 
     const store = new MongoDBStore({
       uri,
-      collection: "sessions",
+      collection: 'sessions'
     });
 
-    store.on("error", (error: Error) => {
-      console.error("Session store error:", error);
+    store.on('error', (error: Error) => {
+      console.error('Session store error:', error);
     });
 
     return store;
