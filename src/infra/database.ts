@@ -63,17 +63,32 @@ class EnduranceDatabase {
       DBMONGO_PATH,
       DBMONGO_PORT
     } = process.env;
+    console.log(process.env);
     const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb';
     return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOSTNAME}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
   }
 
   public connect(): Promise<typeof mongoose> {
-    const connectionString = this.getDbConnectionString();
+  const connectionString = this.getDbConnectionString();
+  console.log('Connection String:', connectionString);
 
-    return mongoose.connect(connectionString, {
-      connectTimeoutMS: 30000
-    } as ConnectOptions);
-  }
+  const options: ConnectOptions = {
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
+    serverSelectionTimeoutMS: 5000,
+    ssl: false // a remettre en true
+  };
+
+  return mongoose.connect(connectionString, options)
+    .then(connection => {
+      console.log('MongoDB connected successfully');
+      return connection;
+    })
+    .catch(error => {
+      console.error('MongoDB connection error:', error);
+      throw error;
+    });
+}
 
   public createStore(): session.Store {
     const uri = this.getDbConnectionString();
