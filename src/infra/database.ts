@@ -59,13 +59,13 @@ class EnduranceDatabase {
     const {
       DBMONGO_USERNAME,
       DBMONGO_PASSWORD,
-      DBMONGO_HOSTNAME,
       DBMONGO_PATH,
-      DBMONGO_PORT
+      DBMONGO_PORT,
+      DBMONGO_HOST
     } = process.env;
     console.log(process.env);
     const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb';
-    return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOSTNAME}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
+    return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOST}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
   }
 
   public connect(): Promise<typeof mongoose> {
