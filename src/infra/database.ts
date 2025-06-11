@@ -22,28 +22,28 @@ class EnduranceDatabase {
 
   private getDbConnectionString() {
     // ATLAS Cloud variables
-    if (
-      process.env.MONGODB_HOST &&
-      process.env.MONGODB_HOST.includes('.mongodb.net')
-    ) {
-      const requiredEnvVars = [
-        'MONGODB_USERNAME',
-        'MONGODB_PASSWORD',
-        'MONGODB_HOST',
-        'MONGODB_DATABASE'
-      ];
-      for (const envVar of requiredEnvVars) {
-        if (!process.env[envVar]) throw new Error(`${envVar} not set`);
-      }
-      const {
-        MONGODB_USERNAME,
-        MONGODB_PASSWORD,
-        MONGODB_HOST,
-        MONGODB_DATABASE
-      } = process.env;
-      const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb+srv';
-      return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
-    }
+    // if (
+    //   process.env.MONGODB_HOST &&
+    //   process.env.MONGODB_HOST.includes('.mongodb.net')
+    // ) {
+    //   const requiredEnvVars = [
+    //     'MONGODB_USERNAME',
+    //     'MONGODB_PASSWORD',
+    //     'MONGODB_HOST',
+    //     'MONGODB_DATABASE'
+    //   ];
+    //   for (const envVar of requiredEnvVars) {
+    //     if (!process.env[envVar]) throw new Error(`${envVar} not set`);
+    //   }
+    //   const {
+    //     MONGODB_USERNAME,
+    //     MONGODB_PASSWORD,
+    //     MONGODB_HOST,
+    //     MONGODB_DATABASE
+    //   } = process.env;
+    //   const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb+srv';
+    //   return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
+    // }
 
     // Otherwise, fallback on internal mongo (DBMONGO_)
     const requiredEnvVars = [
@@ -63,7 +63,7 @@ class EnduranceDatabase {
       DBMONGO_PORT,
       DBMONGO_HOST
     } = process.env;
-    console.log(process.env);
+    console.log('path =>', DBMONGO_PATH, 'Host =>', DBMONGO_HOST);
     const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb';
     return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOST}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
   }
@@ -71,7 +71,7 @@ class EnduranceDatabase {
   public connect(): Promise<typeof mongoose> {
   const connectionString = this.getDbConnectionString();
   const host = new URL(connectionString).host;
-console.log('Connexion à MongoDB sur le host :', host);
+  console.log('Connexion à MongoDB sur le host :', host);
 
   const options: ConnectOptions = {
     connectTimeoutMS: 30000,
