@@ -49,8 +49,8 @@ class EnduranceDatabase {
     const requiredEnvVars = [
       'DBMONGO_USERNAME',
       'DBMONGO_PASSWORD',
-      'DBMONGO_HOSTNAME',
       'DBMONGO_PATH',
+      'DBMONGO_HOST',
       'DBMONGO_PORT'
     ];
     for (const envVar of requiredEnvVars) {
@@ -59,24 +59,25 @@ class EnduranceDatabase {
     const {
       DBMONGO_USERNAME,
       DBMONGO_PASSWORD,
-      DBMONGO_HOSTNAME,
       DBMONGO_PATH,
-      DBMONGO_PORT
+      DBMONGO_PORT,
+      DBMONGO_HOST
     } = process.env;
     console.log(process.env);
     const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb';
-    return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOSTNAME}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
+    return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOST}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
   }
 
   public connect(): Promise<typeof mongoose> {
   const connectionString = this.getDbConnectionString();
-  console.log('Connection String:', connectionString);
+  const host = new URL(connectionString).host;
+console.log('Connexion à MongoDB sur le host :', host);
 
   const options: ConnectOptions = {
     connectTimeoutMS: 30000,
     socketTimeoutMS: 45000,
     serverSelectionTimeoutMS: 5000,
-    ssl: false // a remettre en true
+    ssl: process.env.MONGODB_SSL === 'true' || true
   };
 
   return mongoose.connect(connectionString, options)
