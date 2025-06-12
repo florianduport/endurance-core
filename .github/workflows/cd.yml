@@ -2,8 +2,13 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, test-release]
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -31,7 +36,8 @@ jobs:
       - name: Build library
         run: npm run build
 
-      - name: Publish to npm
-        run: npm publish
+      - name: Semantic Release
+        run: npx semantic-release --dry-run
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
