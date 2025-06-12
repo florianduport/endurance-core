@@ -36,8 +36,31 @@ jobs:
       - name: Build library
         run: npm run build
 
-      - name: Semantic Release
-        run: npx semantic-release --dry-run
+      - name: Check NPM_TOKEN presence
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "❌ NPM_TOKEN not set"
+            exit 1
+          else
+            echo "✅ NPM_TOKEN is present"
+          fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Inject .npmrc
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Semantic Release dry-run
+        run: |
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            echo "🔁 Running semantic-release in production mode"
+            npx semantic-release
+          else
+            echo "🧪 Running semantic-release in dry-run mode on branch: $GITHUB_REF_NAME"
+            npx semantic-release --dry-run
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
