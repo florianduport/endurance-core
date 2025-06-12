@@ -2,7 +2,12 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, test-release]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   build-and-publish:
@@ -31,7 +36,26 @@ jobs:
       - name: Build library
         run: npm run build
 
-      - name: Publish to npm
-        run: npm publish
+      - name: Force NPM config
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+          npm whoami || echo "❌ npm whoami failed"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ""
+          NPM_CONFIG_USERCONFIG: .npmrc
+
+      - name: Semantic Release
+        run: |
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            echo "🔁 Running semantic-release in production mode"
+            npx semantic-release
+          else
+            echo "🧪 Running semantic-release in dry-run mode on branch: $GITHUB_REF_NAME"
+            npx semantic-release --dry-run
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ""
+          NPM_CONFIG_USERCONFIG: .npmrc
