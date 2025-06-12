@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/florianduport/endurance-core.git"
+    "url": "git+https://github.com/programisto-labs/endurance-core.git"
   },
   "dependencies": {
     "@typegoose/typegoose": "^12.13.0",
