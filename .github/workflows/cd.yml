@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, test-release]
 
 jobs:
   build-and-publish:
@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
       - name: Semantic Release
-        run: npx semantic-release
+        run: npx semantic-release --dry-run
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
