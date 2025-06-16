@@ -1,3 +1,10 @@
+## [0.5.7](https://github.com/programisto-labs/endurance-core/compare/v0.5.6...v0.5.7) (2025-06-16)
+
+
+### Bug Fixes
+
+* fix path with [@programisto](https://github.com/programisto) ([2c2f21c](https://github.com/programisto-labs/endurance-core/commit/2c2f21cc29fab4a8eb73af44d04800dcb2b5ccc9))
+
 ## [0.5.6](https://github.com/programisto-labs/endurance-core/compare/v0.5.5...v0.5.6) (2025-06-16)
 
 
