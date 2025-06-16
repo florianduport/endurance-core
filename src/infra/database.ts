@@ -4,6 +4,12 @@ import connectMongoDBSession from 'connect-mongodb-session';
 
 const MongoDBStore = connectMongoDBSession(session);
 
+/* eslint-disable no-var, no-unused-vars */
+declare global {
+  var __MONGO_CONNECTED__: boolean | undefined;
+}
+/* eslint-enable no-var, no-unused-vars */
+
 class EnduranceDatabase {
   private requiredEnvVars: string[] = [
     'MONGODB_USERNAME',
@@ -20,76 +26,51 @@ class EnduranceDatabase {
     });
   }
 
-  private getDbConnectionString() {
-    // ATLAS Cloud variables
-    // if (
-    //   process.env.MONGODB_HOST &&
-    //   process.env.MONGODB_HOST.includes('.mongodb.net')
-    // ) {
-    //   const requiredEnvVars = [
-    //     'MONGODB_USERNAME',
-    //     'MONGODB_PASSWORD',
-    //     'MONGODB_HOST',
-    //     'MONGODB_DATABASE'
-    //   ];
-    //   for (const envVar of requiredEnvVars) {
-    //     if (!process.env[envVar]) throw new Error(`${envVar} not set`);
-    //   }
-    //   const {
-    //     MONGODB_USERNAME,
-    //     MONGODB_PASSWORD,
-    //     MONGODB_HOST,
-    //     MONGODB_DATABASE
-    //   } = process.env;
-    //   const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb+srv';
-    //   return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
-    // }
+  private getDbConnectionString(): string {
+    this.checkRequiredEnvVars();
 
-    // Otherwise, fallback on internal mongo (DBMONGO_)
-    const requiredEnvVars = [
-      'DBMONGO_USERNAME',
-      'DBMONGO_PASSWORD',
-      'DBMONGO_PATH',
-      'DBMONGO_HOST',
-      'DBMONGO_PORT'
-    ];
-    for (const envVar of requiredEnvVars) {
-      if (!process.env[envVar]) throw new Error(`${envVar} not set`);
-    }
     const {
-      DBMONGO_USERNAME,
-      DBMONGO_PASSWORD,
-      DBMONGO_PATH,
-      DBMONGO_PORT,
-      DBMONGO_HOST
+      MONGODB_USERNAME,
+      MONGODB_PASSWORD,
+      MONGODB_HOST,
+      MONGODB_DATABASE
     } = process.env;
-    console.log('path =>', DBMONGO_PATH, 'Host =>', DBMONGO_HOST);
-    const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb';
-    return `${MONGODB_PROTOCOL}://${DBMONGO_USERNAME}:${DBMONGO_PASSWORD}@${DBMONGO_HOST}:${DBMONGO_PORT}/${DBMONGO_PATH}`;
+
+    const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb+srv';
+    return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
   }
 
-  public connect(): Promise<typeof mongoose> {
-  const connectionString = this.getDbConnectionString();
-  const host = new URL(connectionString).host;
-  console.log('Connexion à MongoDB sur le host :', host);
+  public async connect(): Promise<typeof mongoose> {
+    const connectionString = this.getDbConnectionString();
+    const host = new URL(connectionString).host;
 
-  const options: ConnectOptions = {
-    connectTimeoutMS: 30000,
-    socketTimeoutMS: 45000,
-    serverSelectionTimeoutMS: 5000,
-    ssl: process.env.MONGODB_SSL === 'true' || true
-  };
+    console.log('[endurance-core] Connexion à MongoDB sur :', host);
 
-  return mongoose.connect(connectionString, options)
-    .then(connection => {
-      console.log('MongoDB connected successfully');
-      return connection;
-    })
-    .catch(error => {
-      console.error('MongoDB connection error:', error);
-      throw error;
-    });
-}
+    const options: ConnectOptions = {
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 5000,
+      ssl: process.env.MONGODB_SSL === 'true'
+    };
+
+    if (
+      (mongoose.connection.readyState !== 0 && mongoose.connection.readyState !== 3) ||
+      global.__MONGO_CONNECTED__
+    ) {
+      console.log('[endurance-core] Connexion MongoDB déjà établie. Skip.');
+      return mongoose;
+    }
+
+    try {
+      const conn = await mongoose.connect(connectionString, options);
+      global.__MONGO_CONNECTED__ = true;
+      console.log('[endurance-core] ✅ MongoDB connecté avec succès');
+      return conn;
+    } catch (err) {
+      console.error('[endurance-core] ❌ Échec connexion MongoDB :', err);
+      throw err;
+    }
+  }
 
   public createStore(): session.Store {
     const uri = this.getDbConnectionString();
@@ -100,7 +81,7 @@ class EnduranceDatabase {
     });
 
     store.on('error', (error: Error) => {
-      console.error('Session store error:', error);
+      console.error('[endurance-core] Erreur du store de session MongoDB :', error);
     });
 
     return store;
