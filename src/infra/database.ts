@@ -4,8 +4,8 @@ import session from 'express-session';
 const isMongo42OrHigher = process.env.IS_MONGO_42_OR_HIGHER === 'true';
 
 const connectMongoDBSession = isMongo42OrHigher
-? require('connect-mongodb-session')
-: require('connect-mongodb-session-legacy');
+  ? (await import('connect-mongodb-session')).default
+  : (await import('connect-mongodb-session-legacy')).default;
 
 const MongoDBStore = connectMongoDBSession(session);
 
