@@ -252,39 +252,59 @@ class EnduranceApp {
 
       const loadMarketplaceModules = async () => {
         const nodeModulesPath = path.join(this.__dirname, '../../../../../node_modules');
-        const localModulesPath = path.join(this.__dirname, '../../../../../modules');
+        const localModulesPath = path.join(this.__dirname, '../../../../modules');
+
+        const isDirectory = (filePath: string) => fs.existsSync(filePath) && fs.statSync(filePath).isDirectory();
 
         try {
-          const moduleNames = fs.readdirSync(nodeModulesPath);
-          for (const moduleName of moduleNames) {
-            if (moduleName.startsWith('edrm-')) {
-              console.log('Loading EDRM module: ', moduleName);
-              const modulePath = path.join(nodeModulesPath, moduleName);
-              const localModulePath = path.join(localModulesPath, moduleName);
+          const moduleEntries: { name: string; path: string }[] = [];
 
-              // Vérifier d'abord le nouveau chemin avec dist
-              const distModulePath = path.join(modulePath, 'dist');
+          // Modules à la racine de node_modules
+          const rootModules = fs.readdirSync(nodeModulesPath);
+          for (const moduleName of rootModules) {
+            const fullPath = path.join(nodeModulesPath, moduleName);
+            if (moduleName.startsWith('edrm-') && isDirectory(fullPath)) {
+              moduleEntries.push({ name: moduleName, path: fullPath });
+            }
 
-              if (isDirectory(distModulePath)) {
-                try {
-                  console.log('Loading from dist directory:', distModulePath);
-                  await readModulesFolder(distModulePath, localModulePath);
-                } catch (err) {
-                  console.error(`Error reading module dist folder ${distModulePath}:`, err);
-                }
-              } else if (isDirectory(modulePath)) {
-                // Fallback sur l'ancien chemin pour la rétrocompatibilité
-                try {
-                  console.log('Loading from standard directory:', modulePath);
-                  await readModulesFolder(modulePath, localModulePath);
-                } catch (err) {
-                  console.error(`Error reading module folder ${modulePath}:`, err);
+            // Modules scoped, ex: @xxx/edrm-*
+            if (moduleName.startsWith('@') && isDirectory(fullPath)) {
+              const scopedPackages = fs.readdirSync(fullPath);
+              for (const pkg of scopedPackages) {
+                if (pkg.startsWith('edrm-')) {
+                  const scopedPath = path.join(fullPath, pkg);
+                  if (isDirectory(scopedPath)) {
+                    moduleEntries.push({ name: `${moduleName}/${pkg}`, path: scopedPath });
+                  }
                 }
               }
             }
           }
+
+          if (moduleEntries.length === 0) {
+            console.warn('No edrm-* modules found in node_modules.');
+          }
+
+          // Charger chaque module
+          for (const moduleEntry of moduleEntries) {
+            console.log('Loading EDRM module:', moduleEntry.name);
+            const distPath = path.join(moduleEntry.path, 'dist');
+
+            // Pour @xxx/edrm-abc → path.join(..., '@xxx', 'edrm-abc')
+            const localModulePath = path.join(localModulesPath, ...moduleEntry.name.split('/'));
+
+            if (isDirectory(distPath)) {
+              console.log('Loading from dist directory:', distPath);
+              await readModulesFolder(distPath, localModulePath);
+            } else if (isDirectory(moduleEntry.path)) {
+              console.log('Loading from standard directory:', moduleEntry.path);
+              await readModulesFolder(moduleEntry.path, localModulePath);
+            } else {
+              console.warn(`Module ${moduleEntry.name} has no usable folder (dist or base).`);
+            }
+          }
         } catch (err) {
-          console.error('Error reading node modules directory:', err);
+          console.error('Error reading node_modules:', err);
         }
       };
 
