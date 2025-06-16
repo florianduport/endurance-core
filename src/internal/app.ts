@@ -251,8 +251,8 @@ class EnduranceApp {
       };
 
       const loadMarketplaceModules = async () => {
-        const nodeModulesPath = path.join(this.__dirname, '../../../../node_modules');
-        const localModulesPath = path.join(this.__dirname, '../../../../modules');
+        const nodeModulesPath = path.join(this.__dirname, '../../../../../node_modules');
+        const localModulesPath = path.join(this.__dirname, '../../../../../modules');
 
         try {
           const moduleNames = fs.readdirSync(nodeModulesPath);
@@ -291,12 +291,12 @@ class EnduranceApp {
       // Load the marketplace modules
       await loadMarketplaceModules();
       // Load modules from the local modules folder
-      let modulesFolder = path.join(this.__dirname, '../../../../dist/modules');
+      let modulesFolder = path.join(this.__dirname, '../../../../../dist/modules');
 
       if (isDirectory(modulesFolder)) {
         await readModulesFolder(modulesFolder, '');
       } else {
-        modulesFolder = path.join(this.__dirname, '../../../../src/modules');
+        modulesFolder = path.join(this.__dirname, '../../../../../src/modules');
         await readModulesFolder(modulesFolder, '');
       }
 
