@@ -1,3 +1,10 @@
+## [0.5.10](https://github.com/programisto-labs/endurance-core/compare/v0.5.9...v0.5.10) (2025-06-16)
+
+
+### Bug Fixes
+
+* replace require for module ([87627fc](https://github.com/programisto-labs/endurance-core/commit/87627fc8c5f04a045eec342cd9196d3797f967a7))
+
 ## [0.5.9](https://github.com/programisto-labs/endurance-core/compare/v0.5.8...v0.5.9) (2025-06-16)
 
 
