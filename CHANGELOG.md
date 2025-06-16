@@ -1,3 +1,10 @@
+## [0.5.8](https://github.com/programisto-labs/endurance-core/compare/v0.5.7...v0.5.8) (2025-06-16)
+
+
+### Bug Fixes
+
+* load edrm module on root and on @XXX ([ea3ab8d](https://github.com/programisto-labs/endurance-core/commit/ea3ab8d0ed721d1231854e5710eb5b2561478b8a))
+
 ## [0.5.7](https://github.com/programisto-labs/endurance-core/compare/v0.5.6...v0.5.7) (2025-06-16)
 
 
