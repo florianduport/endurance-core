@@ -1,3 +1,11 @@
+## [0.5.9](https://github.com/programisto-labs/endurance-core/compare/v0.5.8...v0.5.9) (2025-06-16)
+
+
+### Bug Fixes
+
+* downgrade mongo-connect-session ([1907c45](https://github.com/programisto-labs/endurance-core/commit/1907c450af4e66739382408a03b02dcbd165326e))
+* downgrade mongo-connect-session add legacy ([a38a421](https://github.com/programisto-labs/endurance-core/commit/a38a421db9486cdfcbee569c844ffa9de6d6441e))
+
 ## [0.5.8](https://github.com/programisto-labs/endurance-core/compare/v0.5.7...v0.5.8) (2025-06-16)
 
 
