@@ -1,5 +1,6 @@
 import * as cron from 'node-cron';
 import { enduranceEmitter } from '../core/emitter.js';
+import logger from '../core/logger.js';
 
 interface ScheduledTask {
   stop: () => void;
@@ -20,7 +21,7 @@ class EnduranceCron {
       try {
         await taskFunction();
       } catch (error) {
-        console.error(`Error executing task for ${upperName}:`, error);
+        logger.error(`Error executing task for ${upperName}:`, error);
       } finally {
         enduranceEmitter.emit(`${upperName}_CRONEND`);
       }
