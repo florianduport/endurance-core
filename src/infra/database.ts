@@ -18,8 +18,6 @@ declare global {
 
 class EnduranceDatabase {
   private requiredEnvVars: string[] = [
-    'MONGODB_USERNAME',
-    'MONGODB_PASSWORD',
     'MONGODB_HOST',
     'MONGODB_DATABASE'
   ];
@@ -39,14 +37,18 @@ class EnduranceDatabase {
       MONGODB_USERNAME,
       MONGODB_PASSWORD,
       MONGODB_HOST,
-      MONGODB_DATABASE
+      MONGODB_DATABASE,
+      MONGODB_AUTH
     } = process.env;
 
     const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb+srv';
-    return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
+    if (MONGODB_AUTH !== 'false') {
+      return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
+    }
+    return `${MONGODB_PROTOCOL}://${MONGODB_HOST}/${MONGODB_DATABASE}`;
   }
 
-  public async connect(): Promise<typeof mongoose> {
+  public async connect(): Promise<{ conn: mongoose.Connection }> {
     const connectionString = this.getDbConnectionString();
     const host = new URL(connectionString).host;
 
@@ -64,14 +66,14 @@ class EnduranceDatabase {
       global.__MONGO_CONNECTED__
     ) {
       logger.info('[endurance-core] Connexion MongoDB déjà établie. Skip.');
-      return mongoose;
+      return { conn: mongoose.connection };
     }
 
     try {
       const conn = await mongoose.connect(connectionString, options);
       global.__MONGO_CONNECTED__ = true;
       logger.info('[endurance-core] ✅ MongoDB connecté avec succès');
-      return conn;
+      return { conn: conn.connection };
     } catch (err) {
       logger.error('[endurance-core] ❌ Échec connexion MongoDB :', err);
       throw err;

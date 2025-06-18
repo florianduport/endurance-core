@@ -14,6 +14,7 @@ import multer from 'multer';
 import { enduranceEmitter, enduranceEventTypes } from '../core/emitter.js';
 import { enduranceSwagger } from '../infra/swagger.js';
 import { fileURLToPath } from 'url';
+import { setupDistributedEmitter } from '../core/distributedEmitter.js';
 
 class EnduranceApp {
   public app: express.Application;
@@ -65,7 +66,7 @@ class EnduranceApp {
     });
 
     // Vérifier si le module est utilisé directement (au premier niveau de node_modules)
-    const nodeModulesCount = (this.__dirname.match(/node_modules/g) || []).length;
+    const nodeModulesCount = (process.cwd().match(/node_modules/g) || []).length;
     this.isDirectUsage = nodeModulesCount === 1;
 
     // Initialiser l'application Express dans tous les cas
@@ -77,6 +78,7 @@ class EnduranceApp {
       this.setupErrorHandling();
       this.setupDatabase();
     });
+    console.log('EnduranceApp initialized with port:', this.port);
   }
 
   private setupMiddlewares() {
@@ -199,8 +201,8 @@ class EnduranceApp {
       };
 
       const loadMarketplaceModules = async () => {
-        const nodeModulesPath = path.join(this.__dirname, '../../../../../node_modules');
-        const localModulesPath = path.join(this.__dirname, '../../../../modules');
+        const nodeModulesPath = path.join(process.cwd(), 'node_modules');
+        const localModulesPath = path.join(process.cwd(), 'modules');
 
         const isDirectory = (filePath: string) => fs.existsSync(filePath) && fs.statSync(filePath).isDirectory();
 
@@ -259,12 +261,12 @@ class EnduranceApp {
       // Load the marketplace modules
       await loadMarketplaceModules();
       // Load modules from the local modules folder
-      let modulesFolder = path.join(this.__dirname, '../../../../../dist/modules');
+      let modulesFolder = path.join(process.cwd(), 'dist/modules');
 
       if (isDirectory(modulesFolder)) {
         await readModulesFolder(modulesFolder, '');
       } else {
-        modulesFolder = path.join(this.__dirname, '../../../../../src/modules');
+        modulesFolder = path.join(process.cwd(), 'src/modules');
         await readModulesFolder(modulesFolder, '');
       }
 
@@ -350,7 +352,14 @@ class EnduranceApp {
         );
 
         enduranceDatabase.connect()
-          .then(() => {
+          .then(({ conn }) => {
+            const db = conn.db;
+            if (!db) {
+              logger.warn('[endurance-core] MongoDB connection established, but no database instance found.');
+              return;
+            }
+            setupDistributedEmitter(conn.db);
+
             // Ne démarrer le serveur que si le module est utilisé directement
             if (this.isDirectUsage) {
               this.startServer();
