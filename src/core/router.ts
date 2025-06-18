@@ -5,6 +5,7 @@ import multer from 'multer';
 import type { Express } from 'express';
 import path from 'path';
 import fs from 'fs';
+import logger from '../core/logger.js';
 
 type SecurityOptions = {
   permissions?: string[];
@@ -124,7 +125,7 @@ abstract class EnduranceRouter<T = any> {
         const ext = path.extname(file.originalname);
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const filename = `${originalName}-${uniqueSuffix}${ext}`;
-        console.log('Saving file:', filename);
+        logger.info('Saving file:', filename);
         cb(null, filename);
       }
     });

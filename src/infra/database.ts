@@ -1,5 +1,6 @@
 import mongoose, { ConnectOptions } from 'mongoose';
 import session from 'express-session';
+import logger from '../core/logger.js';
 
 const isMongo42OrHigher = process.env.IS_MONGO_42_OR_HIGHER === 'true';
 
@@ -17,8 +18,6 @@ declare global {
 
 class EnduranceDatabase {
   private requiredEnvVars: string[] = [
-    'MONGODB_USERNAME',
-    'MONGODB_PASSWORD',
     'MONGODB_HOST',
     'MONGODB_DATABASE'
   ];
@@ -38,18 +37,22 @@ class EnduranceDatabase {
       MONGODB_USERNAME,
       MONGODB_PASSWORD,
       MONGODB_HOST,
-      MONGODB_DATABASE
+      MONGODB_DATABASE,
+      MONGODB_AUTH
     } = process.env;
 
     const MONGODB_PROTOCOL = process.env.MONGODB_PROTOCOL || 'mongodb+srv';
-    return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
+    if (MONGODB_AUTH !== 'false') {
+      return `${MONGODB_PROTOCOL}://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}/${MONGODB_DATABASE}`;
+    }
+    return `${MONGODB_PROTOCOL}://${MONGODB_HOST}/${MONGODB_DATABASE}`;
   }
 
-  public async connect(): Promise<typeof mongoose> {
+  public async connect(): Promise<{ conn: mongoose.Connection }> {
     const connectionString = this.getDbConnectionString();
     const host = new URL(connectionString).host;
 
-    console.log('[endurance-core] Connexion à MongoDB sur :', host);
+    logger.info('[endurance-core] Connexion à MongoDB sur :', host);
 
     const options: ConnectOptions = {
       connectTimeoutMS: 30000,
@@ -62,17 +65,17 @@ class EnduranceDatabase {
       (mongoose.connection.readyState !== 0 && mongoose.connection.readyState !== 3) ||
       global.__MONGO_CONNECTED__
     ) {
-      console.log('[endurance-core] Connexion MongoDB déjà établie. Skip.');
-      return mongoose;
+      logger.info('[endurance-core] Connexion MongoDB déjà établie. Skip.');
+      return { conn: mongoose.connection };
     }
 
     try {
       const conn = await mongoose.connect(connectionString, options);
       global.__MONGO_CONNECTED__ = true;
-      console.log('[endurance-core] ✅ MongoDB connecté avec succès');
-      return conn;
+      logger.info('[endurance-core] ✅ MongoDB connecté avec succès');
+      return { conn: conn.connection };
     } catch (err) {
-      console.error('[endurance-core] ❌ Échec connexion MongoDB :', err);
+      logger.error('[endurance-core] ❌ Échec connexion MongoDB :', err);
       throw err;
     }
   }
@@ -86,7 +89,7 @@ class EnduranceDatabase {
     });
 
     store.on('error', (error: Error) => {
-      console.error('[endurance-core] Erreur du store de session MongoDB :', error);
+      logger.error('[endurance-core] Erreur du store de session MongoDB :', error);
     });
 
     return store;

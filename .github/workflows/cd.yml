@@ -80,6 +80,8 @@ jobs:
         if: github.ref_name == 'main'
         id: create_pr
         uses: peter-evans/create-pull-request@v6
+        env:
+          HUSKY_SKIP_COMMIT: 1
         with:
  #         token: ${{ steps.generate_token.outputs.token }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -91,6 +93,8 @@ jobs:
       - name: Enable auto-merge
         if: github.ref_name == 'main'
         uses: peter-evans/enable-pull-request-automerge@v2
+        env:
+          HUSKY_SKIP_COMMIT: 1
         with:
 #          token: ${{ steps.generate_token.outputs.token }}
           token: ${{ secrets.GITHUB_TOKEN }}
