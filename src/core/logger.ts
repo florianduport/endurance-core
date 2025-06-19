@@ -38,14 +38,30 @@ if (process.env.LOGGER_LOCAL_ACTIVATED === 'true') {
 
 // Loki distant
 if (process.env.LOGGER_DISTANT_ACTIVATED === 'true') {
+    const lokiOptions: any = {
+        host: process.env.LOGGER_DISTANT_URL || '',
+        labels: {
+            job: process.env.LOGGER_DISTANT_APP_NAME || 'nodejs_app'
+        }
+    };
+
+    if (process.env.LOKI_USERNAME && process.env.LOKI_PASSWORD) {
+        lokiOptions.basicAuth = {
+            username: process.env.LOKI_USERNAME,
+            password: process.env.LOKI_PASSWORD
+        };
+    }
+
+    if (process.env.LOKI_TOKEN) {
+        lokiOptions.headers = {
+            Authorization: `Bearer ${process.env.LOKI_TOKEN}`
+        };
+    }
+
+    console.log('Loki options:', lokiOptions);
     targets.push({
         target: 'pino-loki',
-        options: {
-            host: process.env.LOGGER_DISTANT_URL || '',
-            labels: {
-                job: process.env.LOGGER_DISTANT_APP_NAME || 'nodejs_app'
-            }
-        },
+        options: lokiOptions,
         level: 'info'
     });
 }
