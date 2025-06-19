@@ -1,3 +1,10 @@
+## [0.6.1](https://github.com/programisto-labs/endurance-core/compare/v0.6.0...v0.6.1) (2025-06-19)
+
+
+### Bug Fixes
+
+* fix loki auth mode ([14a0c54](https://github.com/programisto-labs/endurance-core/commit/14a0c542d3ba042f869d1ea8c9fa2ed9431f6acf))
+
 # [0.6.0](https://github.com/programisto-labs/endurance-core/compare/v0.5.10...v0.6.0) (2025-06-18)
 
 
