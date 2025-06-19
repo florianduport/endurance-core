@@ -58,7 +58,6 @@ if (process.env.LOGGER_DISTANT_ACTIVATED === 'true') {
         };
     }
 
-    console.log('Loki options:', lokiOptions);
     targets.push({
         target: 'pino-loki',
         options: lokiOptions,
