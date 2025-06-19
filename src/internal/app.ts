@@ -15,6 +15,7 @@ import { enduranceEmitter, enduranceEventTypes } from '../core/emitter.js';
 import { enduranceSwagger } from '../infra/swagger.js';
 import { fileURLToPath } from 'url';
 import { setupDistributedEmitter } from '../core/distributedEmitter.js';
+import { EnduranceWebSocket, setupWebSocketSupport } from '../core/websocket.js';
 
 class EnduranceApp {
   public app: express.Application;
@@ -23,6 +24,7 @@ class EnduranceApp {
   private __dirname: string;
   private isDirectUsage: boolean = false;
   private upload: multer.Multer;
+  private websocketHandlers: EnduranceWebSocket[] = [];
 
   constructor() {
     const __filename = fileURLToPath(import.meta.url);
@@ -66,7 +68,7 @@ class EnduranceApp {
     });
 
     // Vérifier si le module est utilisé directement (au premier niveau de node_modules)
-    const nodeModulesCount = (process.cwd().match(/node_modules/g) || []).length;
+    const nodeModulesCount = (this.__dirname.match(/node_modules/g) || []).length;
     this.isDirectUsage = nodeModulesCount === 1;
 
     // Initialiser l'application Express dans tous les cas
@@ -173,6 +175,16 @@ class EnduranceApp {
             routesMap.set(basePath, new Map());
           }
           routesMap.get(basePath)!.set(version || 'default', filePath);
+        } else if (endsWith(file, '.websocket.js') && endsWith(folderPath, 'websockets')) {
+          try {
+            const { default: HandlerClass } = await import('file:///' + filePath);
+            const instance = new HandlerClass();
+            if (instance instanceof EnduranceWebSocket) {
+              this.websocketHandlers.push(instance);
+            }
+          } catch (err) {
+            logger.error(`Error loading websocket handler ${file}:`, err);
+          }
         }
       };
 
@@ -396,15 +408,24 @@ class EnduranceApp {
                                                         
                                                         
     `);
-    this.app.listen(this.port, () => {
+    const server = this.app.listen(this.port, () => {
       logger.info(`Server listening on port ${this.port}`);
       enduranceEmitter.emit(enduranceEventTypes.APP_STARTED);
     });
+
+    this.setupWebSocketServer(server);
   }
 
   // Méthode publique pour accéder à l'instance de multer
   public getUpload() {
     return this.upload;
+  }
+
+  private setupWebSocketServer(server: import('http').Server) {
+    if (this.websocketHandlers.length > 0) {
+      setupWebSocketSupport(server, this.websocketHandlers);
+      logger.info(`[websocket] ${this.websocketHandlers.length} WebSocket handlers activated`);
+    }
   }
 }
 
