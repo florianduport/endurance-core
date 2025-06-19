@@ -1,3 +1,10 @@
+## [0.6.2](https://github.com/programisto-labs/endurance-core/compare/v0.6.1...v0.6.2) (2025-06-19)
+
+
+### Bug Fixes
+
+* remove loki conf log ([ae27a72](https://github.com/programisto-labs/endurance-core/commit/ae27a728cbbb6cce3e47ceefb69a638fb51cfcd8))
+
 ## [0.6.1](https://github.com/programisto-labs/endurance-core/compare/v0.6.0...v0.6.1) (2025-06-19)
 
 
